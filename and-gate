@@ -4,9 +4,21 @@
 - Learn how to create a simple combinational logic module in Verilog.
 
 ## Concepts Learned
--
+
+- module
+- input
+- output
+- wire
+- assign
 
 ## Truth Table
+
+| A | B || Y |
+| ---------- |
+| 0 | 0 || 0 |
+| 0 | 1 || 0 |
+| 1 | 0 || 0 |
+| 1 | 1 || 1 |
 
 ## Simulation
 
