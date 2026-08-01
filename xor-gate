@@ -23,9 +23,19 @@ Learn how to implement an XOR gate in Verilog and understand how exclusive logic
 
 ## Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/01-verilog-basics/XOR-gate%20simulation.png 
+
 ## Reflection
 
+This project introduced the XOR operator, which behaves differently from the AND and OR gates I implemented previously.
+
+I learned that XOR outputs a logic high only when the two inputs are different.
+
+I also became much more comfortable with Verilog and the pipeline.
+
 ## Problems
+
+No major problems occured during this project.
 
 ## References
 
