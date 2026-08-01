@@ -1,1 +1,32 @@
+## Goal
 
+Learn how to implement an XOR gate in Verilog and understand how exclusive logic differs from AND and OR.
+
+## Concepts Learned
+
+- module
+- input
+- output
+- wire
+- assign
+- XOR operator (`^`)
+- combinational logic
+
+## Truth Table
+
+| A | B | Y |
+|:-:|:-:|:-:|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 0 |
+
+## Simulation
+
+## Reflection
+
+## Problems
+
+## References
+
+- Nandland – Learn Verilog: https://nandland.com/learn-verilog/
