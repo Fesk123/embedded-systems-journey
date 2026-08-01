@@ -1,1 +1,34 @@
+# OR Gate
 
+## Goal
+
+Learn how to implement a basic OR gate in Verilog and continue practicing combinational logic design.
+
+## Concepts Learned
+
+- module
+- input
+- output
+- wire
+- assign
+- combinational logic
+
+## Truth Table
+
+| A | B | Y |
+|:-:|:-:|:-:|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 1 |
+
+## Simulation
+
+
+## Reflection
+
+## Problems
+
+## References
+
+- Nandland – Learn Verilog: https://nandland.com/learn-verilog/
