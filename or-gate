@@ -24,10 +24,16 @@ Learn how to implement a basic OR gate in Verilog and continue practicing combin
 
 ## Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/01-verilog-basics/OR-gate%20simulation.png 
 
 ## Reflection
 
+This project was much easier than the last project, since most of the code from the AND gate could be reused.
+The project reinforced my understanding of combinational logic in Verilog.
+
 ## Problems
+
+It was much easier to do this project than the last, the only obstacle I faced was that I needed to restart wsl, since gtkwave had errors with the graphics driver.
 
 ## References
 
