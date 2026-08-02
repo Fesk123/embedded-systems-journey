@@ -43,3 +43,4 @@ The main challenge was understanding the purpose of a decoder compared to a demu
 ## References
 
 - Nandland – Learn Verilog: https://nandland.com/learn-verilog/
+- https://medium.com/@areeshasoomro031/fpga-design-fundamentals-building-a-2-4-decoder-using-verilog-hdl-2a8b9e96528b
