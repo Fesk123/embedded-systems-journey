@@ -1,1 +1,36 @@
+# Multiplexer (2:1)
 
+## Goal
+
+Learn how to build a 2-to-1 multiplexer in Verilog and understand how selection logic is used to route data inside digital systems.
+
+## Concepts Learned
+
+- module
+- input
+- output
+- wire
+- assign
+- conditional operator (`?:`)
+- selection logic
+- combinational logic
+
+## Truth Table
+
+|  a  |  b  | sel |  y  |
+| :-: | :-: | :-: | :-: |
+|  0  |  1  |  0  |  0  |
+|  0  |  1  |  1  |  1  |
+|  1  |  0  |  0  |  1  |
+|  1  |  0  |  1  |  0  |
+
+
+## Simulation
+
+## Reflection
+
+## Problems
+
+## References
+
+- Nandland – Learn Verilog: https://nandland.com/learn-verilog/
