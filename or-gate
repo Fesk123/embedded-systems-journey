@@ -1,0 +1,40 @@
+# OR Gate
+
+## Goal
+
+Learn how to implement a basic OR gate in Verilog and continue practicing combinational logic design.
+
+## Concepts Learned
+
+- module
+- input
+- output
+- wire
+- assign
+- combinational logic
+
+## Truth Table
+
+| A | B | Y |
+|:-:|:-:|:-:|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 1 |
+
+## Simulation
+
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/01-verilog-basics/OR-gate%20simulation.png 
+
+## Reflection
+
+This project was much easier than the last project, since most of the code from the AND gate could be reused.
+The project reinforced my understanding of combinational logic in Verilog.
+
+## Problems
+
+It was much easier to do this project than the last, the only obstacle I faced was that I needed to restart wsl, since gtkwave had errors with the graphics driver.
+
+## References
+
+- Nandland – Learn Verilog: https://nandland.com/learn-verilog/
