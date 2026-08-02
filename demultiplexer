@@ -26,10 +26,21 @@ Learn how to build a 1-to-2 demultiplexer in Verilog and understand how digital 
 
 ## Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/01-verilog-basics/DEMUX%20simulation.png
 
 ## Reflection
 
+This project is the opposite of a multiplexer, it swaps the amount inputs and outputs.
+
+I learned how a single control signal determines which output receives the input signal. This helped me better understand how digital systems distribute data between different hardware components.
+
 ## Problems
+
+No major problems occurred during this project.
+
+The main challenge was understanding the difference between a multiplexer and a demultiplexer. After comparing both circuits and analyzing the simulation results, their opposite behavior became much clearer.
+
+It was harder to find sources on the code, eventually landed on slideshare.
 
 ## References
 
