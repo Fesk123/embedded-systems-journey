@@ -26,12 +26,19 @@ Learn how to implement a 2-to-4 decoder in Verilog and understand how decoders a
 
 ## Simulation
 
-
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/01-verilog-basics/Decoder%20simulation.png
 
 ## Reflection
 
+This challenging project introduced binary decoding and showed how a small number of input bits can uniquely select one of several outputs.
+
+Completing this project marked the end of my introduction to combinational logic in Verilog.
 
 ## Problems
+
+No major problems occured during this project.
+
+The main challenge was understanding the purpose of a decoder compared to a demultiplexer. While both activate outputs based on a control signal, the decoder generates unique output patterns directly from binary inputs rather than routing a data signal.
 
 ## References
 
