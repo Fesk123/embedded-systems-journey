@@ -13,6 +13,9 @@ Topics:
 - case
 
 Projects:
-- AND gate
-- OR gate
-- XOR gate
+- AND gate ✅
+- OR gate ✅
+- XOR gate ✅
+- MUX
+- DEMUX
+- Decoder
