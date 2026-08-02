@@ -1,1 +1,60 @@
+# Journal
+
+########## Week 1 – Verilog Basics ##########
+
+### Goal
+
+Learn the fundamentals of Verilog and become comfortable writing simple combinational logic modules.
+
+### Completed Projects
+
+-  AND Gate
+-  OR Gate
+-  XOR Gate
+-  2:1 Multiplexer
+-  1:2 Demultiplexer
+-  2-to-4 Decoder
+
+### What I Learned
+
+During this week I learned the basic structure of a Verilog module and how hardware description languages differ from traditional programming languages.
+
+I became familiar with:
+
+- `module`
+- `input` and `output`
+- `wire`
+- `assign`
+- combinational logic
+- truth tables
+- writing testbenches
+- verifying designs using simulation
+
+I also learned how common digital building blocks such as multiplexers, demultiplexers and decoders are used to route and select data in digital systems.
+
+### Challenges
+
+At the beginning it took some time to adjust to thinking in terms of hardware rather than sequential software execution.
+
+Another challenge was understanding the purpose of the different logic components instead of only memorizing their truth tables.
+
+### How I Solved Them
+
+I used waveform simulations together with truth tables to verify every design.
+
+Reading the documentation and comparing the behavior of each circuit helped me understand why each component exists and where it is used.
+
+### Reflection
+
+This week gave me a solid introduction to digital design.
+
+I now feel comfortable writing simple combinational circuits in Verilog and verifying them using simulations.
+
+Although the individual projects were relatively small, they introduced many of the concepts that will be reused throughout the rest of this learning journey.
+
+### Next Step
+
+Sequential logic.
+
+I will learn how clocks, flip-flops, registers and finite state machines work before moving on to larger computer components.
 
