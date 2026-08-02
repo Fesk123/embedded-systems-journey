@@ -27,9 +27,19 @@ Learn how to build a 2-to-1 multiplexer in Verilog and understand how selection 
 
 ## Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/01-verilog-basics/MUX%20simulation.png 
+
 ## Reflection
 
+This project introduced the concept of data selection instead of logical operations.
+
+Unlike to previous projects, the multiplexer does not calculate a new value, it instead selects.
+
+This has been the most fun project thus far.
+
 ## Problems
+
+No major problems occured during this project.
 
 ## References
 
