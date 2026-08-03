@@ -1,1 +1,42 @@
+# D Flip-Flop
 
+## Goal
+
+Learn how to implement a D Flip-Flop in Verilog and understand how sequential logic stores data using a clock signal.
+
+## Concepts Learned
+
+- module
+- input
+- output
+- reg/logic
+- always block
+- posedge
+- clock
+- reset
+- sequential logic
+
+## Truth Table
+
+| Reset | Clock | D | Q (Next) |
+|:-----:|:-----:|:-:|:--------:|
+|   1   |   ↑   | X |    0     |
+|   0   |   ↑   | 0 |    0     |
+|   0   |   ↑   | 1 |    1     |
+|   0   | No ↑  | X | Holds Q  |
+
+> **↑** = Rising edge of the clock  
+> **X** = Don't care / any value
+
+## Simulation
+
+
+
+## Reflection
+
+## Problems
+
+## References
+
+- Nandland – Learn Verilog: https://nandland.com/learn-verilog/
+- HDLBits: https://hdlbits.01xz.net/wiki/Main_Page
