@@ -30,11 +30,19 @@ Learn how to implement a D Flip-Flop in Verilog and understand how sequential lo
 
 ## Simulation
 
-
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/02-sequential-logic/Dff%20simulation.png
 
 ## Reflection
 
+This project introduced sequential logic, where outputs depend on both the current inputs and the previous state.
+
+I learned how a D Flip-Flop stores one bit of information and only updates its output on the rising edge of the clock. This was a significant shift from combinational logic, where outputs change immediately when inputs change.
+
+The biggest challenge was understanding why the output does not change immediately when the input changes. By studying the waveform, I realized that the output is only updated on the rising edge of the clock, which is the key characteristic of sequential logic.
+
 ## Problems
+
+No major problems occured during this project.
 
 ## References
 
