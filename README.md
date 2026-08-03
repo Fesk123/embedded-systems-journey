@@ -1,19 +1,36 @@
-# embeded-systems-journey
-A documented learning journey into embedded systems and FPGA development.
+# Sequential Logic
 
-## Topics
+## Goal
 
-- Digital logic
-- FPGA development
-- HDL programming
-- Embedded Linux
-- Device drivers
-- PCB design
-- Hardware debugging
+Learn how digital circuits store information and change state over time.
 
-## Timeline
+Unlike combinational logic, sequential logic depends on previous values and is synchronized by a clock signal.
 
-Started: August 2026
+## Learning Objectives
 
-Goal:
-Build a custom embedded Linux platform running on FPGA hardware. Link: https://github.com/Fesk123/Linux-fpga-computer
+- Understand clocks
+- Understand resets
+- Learn flip-flops
+- Learn registers
+- Build counters
+- Build shift registers
+- Design finite state machines
+
+## Projects
+
+- D Flip-Flop
+- Register
+- Counter
+- Shift Register
+- Traffic Light FSM
+- Elevator FSM
+- UART State Machine
+
+## Skills
+
+After completing this phase I should be able to:
+
+- Write sequential Verilog
+- Design simple state machines
+- Understand how memory works in digital systems
+- Read most beginner FPGA projects
