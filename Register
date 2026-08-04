@@ -2,7 +2,7 @@
 
 ## Goal
 
-Learn how to implement an 8-bit register in Verilog and understand how multiple D Flip-Flops work together to store binary data.
+Learn how to implement an 4-bit register in Verilog and understand how multiple D Flip-Flops work together to store binary data.
 
 ## Concepts Learned
 
@@ -36,3 +36,5 @@ Learn how to implement an 8-bit register in Verilog and understand how multiple 
 ## Problems
 
 ## References
+
+- https://hwlabnitc.github.io/Verilog/registers.html
