@@ -1,1 +1,38 @@
+# 4-bit Register
 
+## Goal
+
+Learn how to implement an 8-bit register in Verilog and understand how multiple D Flip-Flops work together to store binary data.
+
+## Concepts Learned
+
+- register
+- sequential logic
+- clock
+- reset
+- always block
+- posedge
+- vector signals
+- data storage
+
+## Truth Table
+
+## Truth Table
+
+| Reset | Clock  | D[7:0] | Q[7:0] (Next) |
+|--------|--------|--------|---------------|
+| 1      | Rising Edge | XXXXXXXX | 00000000 |
+| 0      | Rising Edge | Data     | Data     |
+| 0      | No Edge     | XXXXXXXX | Pr Value |
+
+> **↑** = Rising edge of the clock  
+> **X** = Don't care
+
+## Simulation
+
+## Reflection
+
+
+## Problems
+
+## References
