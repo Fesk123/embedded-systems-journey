@@ -17,8 +17,6 @@ Learn how to implement an 4-bit register in Verilog and understand how multiple 
 
 ## Truth Table
 
-## Truth Table
-
 | Reset | Clock  | D[7:0] | Q[7:0] (Next) |
 |--------|--------|--------|---------------|
 | 1      | Rising Edge | XXXXXXXX | 00000000 |
@@ -30,10 +28,19 @@ Learn how to implement an 4-bit register in Verilog and understand how multiple 
 
 ## Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/02-sequential-logic/Register%20simulation.png
+
 ## Reflection
 
+This project expanded on the D Flip-Flop by storing 4 bits instead of a single one.
+
+Understanding registers is important because they are fundamental components in processors, memory systems and digital communication.
 
 ## Problems
+
+No major problems occurred during this project.
+
+The main challenge was understanding vector signals (`[3:0]`) and how multiple bits can be stored and updated at the same time.
 
 ## References
 
