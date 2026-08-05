@@ -26,9 +26,19 @@ Learn how to implement an 4-bit serial-in serial-out (SISO) shift register in Ve
 
 ## Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/02-sequential-logic/Shift%20Register%20Simulation.png
+
 ## Reflection
 
+This project introduced me to serial data storage and movement using a shift register.
+
+Unlike a standard register, which updates every bit simultaneously, a shift register moves stored data one position on every rising clock edge. This demostrated how sequential logic can manipulate data over time instead of simply storing it.
+
 ## Problems
+
+No major problems occurred during this project.
+
+The main challenge was understanding how every bit shifts simultaneously during a clock edge while the new serial input enters one side of the register.
 
 ## References
 
