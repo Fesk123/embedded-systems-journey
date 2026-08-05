@@ -1,1 +1,35 @@
+# 4-bit Shift Register (SISO)
 
+## Goal
+
+Learn how to implement an 4-bit serial-in serial-out (SISO) shift register in Verilog and understand how data can be shifted through sequential logic one bit at a time.
+
+## Concepts Learned
+
+- shift register
+- serial communication
+- sequential logic
+- clock
+- reset
+- always block
+- bit shifting
+- data storage
+
+## Truth Table
+
+| Reset | Clock        | Serial In | Register (Next State) |
+|--------|--------------|-----------|-----------------------|
+| 1      | Rising Edge  | X         | 00000000              |
+| 0      | Rising Edge  | 0         | Shift left, insert 0  |
+| 0      | Rising Edge  | 1         | Shift left, insert 1  |
+| 0      | No Edge      | X         | Previous Value        |
+
+## Simulation
+
+## Reflection
+
+## Problems
+
+## References
+
+- https://hwlabnitc.github.io/Verilog/registers.html#shift-registers
