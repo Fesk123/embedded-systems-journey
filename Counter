@@ -26,9 +26,21 @@ Learn how to implement an 4-bit synchronous up counter in Verilog and understand
 
 ## Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/02-sequential-logic/Counter%20simulation.png
+
 ## Reflection
 
+This project introduced state updates where the circuit modifies its own stored value instead of simply storing external data.
+
+I learned how a counter increments on every rising clock edge when enabled, making it one of the simplest examples of a sequential circuit with internal state progression.
+
+Counters are widely used for timers, frequency division, clocks and control logic in digital systems.
+
 ## Problems
+
+No major problems occurred during this project.
+
+The main challenge was understanding that the next value depends on the current stored value rather than only on the external inputs.
 
 ## References
 
