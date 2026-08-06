@@ -1,1 +1,35 @@
+# 4-bit Up Counter
 
+## Goal
+
+Learn how to implement an 4-bit synchronous up counter in Verilog and understand how sequential logic can update its own state over time.
+
+## Concepts Learned
+
+- counter
+- sequential logic
+- clock
+- reset
+- enable
+- always block
+- posedge
+- state updates
+
+## Truth Table
+
+| Reset | Enable | Clock        | Next Count      |
+|:-----:|:------:|:------------:|:---------------:|
+| 1     | X      | Rising Edge  | 0               |
+| 0     | 0      | Rising Edge  | Current Count   |
+| 0     | 1      | Rising Edge  | Curr. Count + 1 |
+| 0     | X      | No Edge      | Current Count   |
+
+## Simulation
+
+## Reflection
+
+## Problems
+
+## References
+
+  - Medium - https://medium.com/@raoumer160903/counter-implementation-in-verilog-73f6a4ae0f79
