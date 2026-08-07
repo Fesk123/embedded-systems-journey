@@ -47,9 +47,19 @@ IDLE
 
 ## Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/02-sequential-logic/Elevator%20simulation.png
+
 ## Reflection
 
+This project expanded my understanding of finite state machines by introducing transitions based on input signals rather than following a fixed sequence.
+
+Unlike the traffic light controller, the elevator controller reacts to events such as a call button or arriving at a floor. This made the FSM more realistic and demonstrated how control logic is commonly implemented in digital systems.
+
 ## Problems
+
+No major problems occurred during this project.
+
+The main challenge was organizing the states and making sure every possible transition was handled correctly. Drawing the state diagram before coding made the implementation much easier.
 
 ## References
 
