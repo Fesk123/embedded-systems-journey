@@ -1,1 +1,59 @@
+# Elevator FSM
 
+## Goal
+
+Learn how to implement a more advanced Finite State Machine (FSM) in Verilog by designing a simplified elevator controller.
+
+## Concepts Learned
+
+- finite state machine (FSM)
+- states
+- state transitions
+- sequential logic
+- clock
+- reset
+- case statement
+- state encoding
+- input-driven transitions
+
+## State Diagram
+
+IDLE
+
+↓
+
+MOVING_UP
+
+↓
+
+DOOR_OPEN
+
+↓
+
+DOOR_CLOSE
+
+↓
+
+IDLE
+
+## State Table
+
+| Current State |  Condition  | Next State |
+|---------------|-------------|------------|
+| IDLE          | Call Button | MOVING_UP  |
+| MOVING_UP     | Arrived     | DOOR_OPEN  |
+| DOOR_OPEN     | Timer Done  | DOOR_CLOSE |
+| DOOR_CLOSE    | Complete    | IDLE       |
+
+## Simulation
+
+## Reflection
+
+## Problems
+
+## References
+
+- Nandland – Learn Verilog: https://nandland.com/learn-verilog/
+- HDLBits: https://hdlbits.01xz.net/wiki/Main_Page
+- Project F Tutorials: https://projectf.io/tutorials/
+- chipverify: https://chipverify.com/verilog/verilog-fsm
