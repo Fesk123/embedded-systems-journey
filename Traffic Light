@@ -47,9 +47,21 @@ RED
 
 ## Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/02-sequential-logic/Traffic%20light%20simulation.png
+
 ## Reflection
 
+This project introduced finite state machines, which are one of the most important concepts in digital design.
+
+Unlike previous projects, the behavior of the circuit is described using states and transitions rather than simple combinational or sequential logic.
+
+Designing the traffic light controller helped me understand how digital systems move between different operating modes over time.
+
 ## Problems
+
+No major problems occurred during this project.
+
+The main challenge was understanding how each state determines the next state.
 
 ## References
 
