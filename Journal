@@ -58,3 +58,91 @@ Sequential logic.
 
 I will learn how clocks, flip-flops, registers and finite state machines work before moving on to larger computer components.
 
+
+########## Week 2 – Sequential Logic ##########
+
+### Goal
+
+Learn how sequential logic works and understand how digital circuits can store information and change their state over time.
+
+### Completed Projects
+
+- D Flip-Flop
+- 8-bit Register
+- 8-bit Shift Register
+- 8-bit Counter
+- Traffic Light FSM
+- Elevator FSM
+- UART State Machine
+
+### What I Learned
+
+During this stage I learned how sequential logic differs from combinational logic.
+
+I learned how a clock signal can be used to synchronize changes in a digital circuit and how flip-flops can store information.
+
+The main concepts I worked with were:
+
+- Clock signals
+- Rising edges (`posedge`)
+- Reset
+- D Flip-Flops
+- Registers
+- Counters
+- Shift Registers
+- Finite State Machines (FSMs)
+- State transitions
+- State encoding
+- Serial communication
+- UART
+
+I also learned how several smaller components can work together. For example, an FSM can control what operation should happen while a counter keeps track of timing or position.
+
+### Challenges
+
+The biggest conceptual challenge was understanding the difference between combinational and sequential logic.
+
+With combinational logic, the output depends directly on the current inputs. With sequential logic, the circuit can store information and its behavior depends on its previous state.
+
+FSMs were another important challenge. It was necessary to think about the system as a collection of states and transitions instead of just individual logic operations.
+
+### How I Solved Them
+
+I used simulations and waveforms to observe how signals changed over time.
+
+For the FSM projects, I found it useful to find a diagram and a state table before writing the Verilog implementation.
+
+Breaking larger problems into smaller components also made the projects easier to understand.
+
+### Reflection
+
+This stage was a significant step forward from the first stage.
+
+In Verilog Basics, I mainly learned how to describe simple combinational logic. During Sequential Logic, I learned how hardware can store information, keep track of its state and react to events over time.
+
+The FSM projects were especially useful because they showed how the concepts from the earlier projects can be combined to create more complex control systems.
+
+The UART state machine also gave me my first introduction to how digital logic can be used to control a real communication protocol.
+
+I now have a much better understanding of the basic building blocks used in larger digital systems.
+
+### What I Can Do Now
+
+After completing this stage, I can:
+
+- Write basic sequential Verilog
+- Use clocks and resets
+- Create registers and counters
+- Shift data between registers
+- Design simple FSMs
+- Create state diagrams and state tables
+- Understand basic UART transmission logic
+- Verify sequential designs using simulation and waveforms
+
+### Next Step
+
+The next stage will focus on building larger computer components.
+
+I will start by implementing a UART from scratch, followed by SPI, memory components and an ALU.
+
+The goal is to move from individual digital building blocks toward the components that make up a computer system.
