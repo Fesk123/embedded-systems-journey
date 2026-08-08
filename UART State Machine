@@ -1,1 +1,72 @@
+# UART State Machine
 
+## Goal
+
+Learn how to design a Finite State Machine for a UART transmitter and understand how state machines control serial communication.
+
+This project focuses only on the control logic of the UART transmitter, not a complete UART implementation.
+
+## Concepts Learned
+
+- finite state machine (FSM)
+- UART
+- serial communication
+- state transitions
+- start bit
+- data bits
+- stop bit
+- bit counter
+- clock
+- sequential logic
+- control logic
+
+## UART Frame
+
+A basic UART transmission consists of:
+
+Idle → Start Bit → Data Bits → Stop Bit → Idle
+
+The data is transmitted one bit at a time, starting with the least significant bit (LSB).
+
+## State Diagram
+
+IDLE
+
+↓
+
+START
+
+↓
+
+DATA
+
+↓
+
+STOP
+
+↓
+
+IDLE
+
+## State Table
+
+| Current State | Condition | Next State |
+|---------------|-----------|------------|
+| IDLE | Start transmission |   START    |
+| START | Bit period complete |   DATA   |
+| DATA | More bits remain |     DATA     |
+| DATA | Last bit transmitted |   STOP   |
+| STOP | Bit period complete |    IDLE   |
+
+## Simulation
+
+![Simulation](uart-state-machine-simulation.png)
+
+## Reflection
+
+## Problems
+
+## References
+
+- Nandland – UART: https://nandland.com/uart-serial-port-module/
+- ecrionix: https://ecrionix.org/verilog/finite-state-machines/#uart-rx
