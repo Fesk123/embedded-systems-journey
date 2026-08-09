@@ -1,1 +1,343 @@
+# UART From Scratch
 
+## Goal
+
+Build a UART from scratch in Verilog and understand how asynchronous serial communication works at the hardware level.
+
+The project consists of:
+
+1. Baud Rate Generator
+2. UART Transmitter (TX)
+3. UART Receiver (RX)
+4. TX/RX Integration
+
+The final goal was to successfully transmit and receive data through the complete UART system.
+
+---
+
+# UART Overview
+
+## What is UART?
+
+UART (Universal Asynchronous Receiver-Transmitter) is a serial communication protocol used to transmit data between digital devices.
+
+UART is asynchronous, meaning that no shared clock signal is transmitted between the devices. Instead, both devices must agree on a baud rate.
+
+## UART Configuration
+
+This project uses the 8N1 UART format:
+
+- 8 data bits
+- No parity
+- 1 stop bit
+- LSB transmitted first
+
+## UART Frame
+
+Idle | Start | D0 | D1 | D2 | D3 | D4 | D5 | D6 | D7 | Stop | Idle
+  1     0
+
+---
+
+# Part 1 – Baud Rate Generator
+
+## Goal
+
+Generate a timing signal that determines when the UART should process the next bit.
+
+## Specifications
+
+| Parameter |      Value      |
+|-----------|-----------------|
+| FPGA Clock |     100 MHz    |
+| Baud Rate |     115200      |
+| Clock Cycles per Bit | ~868 |
+
+The relationship between the FPGA clock and baud rate is approximately:
+
+
+100,000,000 / 115,200 ≈ 868
+
+
+Therefore, approximately 868 FPGA clock cycles occur during one UART bit period.
+
+## Architecture
+
+
+100 MHz Clock
+      │
+      ▼
+Clock Counter
+      │
+      ▼
+ Baud Tick
+
+
+The baud generator produces a timing pulse that is used by the transmitter and receiver to determine when to process the next UART bit.
+
+## Concepts Learned
+
+- Clock frequency
+- Baud rate
+- Clock divider
+- Counter
+- Clock enable
+- Timing
+
+## Simulation
+
+## Reflection
+
+The baud rate generator introduced the relationship between the FPGA clock and the timing required by a communication protocol.
+
+I learned that the UART does not need a separate physical clock signal. Instead, the internal FPGA clock can be divided into smaller timing intervals that correspond to UART bit periods.
+
+## Problems
+
+The main challenge was understanding the relationship between the FPGA clock frequency and the desired baud rate.
+
+Calculating the number of FPGA clock cycles per UART bit made the timing easier to understand.
+
+---
+
+# Part 2 – UART Transmitter (TX)
+
+## Goal
+
+Build a UART transmitter that converts an 8-bit parallel value into a serial UART frame.
+
+## Inputs
+
+- data[7:0]
+- start
+
+## Output
+
+- tx
+
+## UART Transmission
+
+The transmitter sends the bits in the following order:
+
+Start → D0 → D1 → D2 → D3 → D4 → D5 → D6 → D7 → Stop
+
+The least significant bit (LSB) is transmitted first.
+
+## State Machine
+
+IDLE
+  │
+  ▼
+START
+  │
+  ▼
+DATA
+  │
+  ▼
+STOP
+  │
+  ▼
+IDLE
+
+## Concepts Learned
+
+- UART transmission
+- Serial data
+- Start bit
+- Stop bit
+- LSB first
+- FSM
+- Baud timing
+
+## Simulation
+
+## Reflection
+
+Building the transmitter showed how a parallel byte can be converted into a serial stream.
+
+The FSM controls which part of the UART frame is currently being transmitted, while the baud timing determines when the next bit is sent.
+
+This connected the FSM knowledge from the previous Sequential Logic section to a practical communication protocol.
+
+## Problems
+
+The main challenge was making sure that each bit remained on the TX line for the correct amount of time.
+
+The baud tick was therefore important for synchronizing the state machine and bit transmission.
+
+---
+
+# Part 3 – UART Receiver (RX)
+
+## Goal
+
+Build a UART receiver that converts an incoming serial UART frame into an 8-bit parallel value.
+
+## Input
+
+- rx
+
+
+## Outputs
+
+- data[7:0]
+- data_valid
+
+
+## UART Reception
+
+The receiver waits for the start bit and then samples the incoming data bits.
+
+Start
+  ↓
+D0 → D1 → D2 → D3 → D4 → D5 → D6 → D7
+  ↓
+Stop
+
+## State Machine
+
+IDLE
+  │
+  ▼
+START
+  │
+  ▼
+DATA
+  │
+  ▼
+STOP
+  │
+  ▼
+IDLE
+
+## Concepts Learned
+
+- UART reception
+- Start bit detection
+- Bit timing
+- Serial-to-parallel conversion
+- FSM
+- Data validation
+
+## Simulation
+
+## Reflection
+
+The receiver was more difficult to understand than the transmitter because it has to determine when the incoming serial data should be sampled.
+
+I learned how the receiver uses the known baud timing to determine when each data bit should be read.
+
+This also demonstrated why timing is one of the most important aspects of digital communication.
+
+## Problems
+
+The main challenge was correctly detecting the start bit and keeping the receiver synchronized with the incoming data.
+
+Testing the receiver using simulation made it possible to inspect the timing of each bit and verify that the received byte was correct.
+
+---
+
+# Part 4 – UART Integration
+
+## Goal
+
+Connect the UART transmitter and receiver and verify that data can be transmitted and received correctly.
+
+## Architecture
+
+             ┌──────────────┐
+data[7:0] ──►│   UART TX    │
+             └──────┬───────┘
+                    │
+                    │ TX
+                    ▼
+             ┌──────────────┐
+             │   UART RX    │
+             └──────┬───────┘
+                    │
+                    ▼
+                 data[7:0]
+
+The baud generator provides the timing used by both parts of the UART.
+
+## Test Data
+
+| Input | Expected Output |
+|-------|-----------------|
+|  0x41 |       0x41      |
+|  0x55 |       0x55      |
+|  0xAA |       0xAA      |
+|  0xFF |       0xFF      |
+
+## Simulation
+
+## Result
+
+The complete UART was successfully simulated.
+
+Data transmitted by the TX module was correctly received by the RX module.
+
+This verified that the baud timing, transmitter, receiver and state machines worked together correctly.
+
+---
+
+# What I Learned
+
+This project combined several concepts from the previous learning stages.
+
+I learned how:
+
+- A clock can be divided to create communication timing.
+- Data can be transmitted one bit at a time.
+- An FSM can control a communication protocol.
+- A parallel byte can be converted into serial data.
+- Serial data can be converted back into a parallel byte.
+- Timing is critical when communicating between digital systems.
+
+The UART project also showed how the simpler components built earlier can be combined into a larger hardware system.
+
+---
+
+# Challenges
+
+The most challenging parts of the project were:
+
+1. Understanding baud-rate timing.
+2. Keeping TX synchronized with the baud generator.
+3. Detecting the start bit in the receiver.
+4. Sampling the received bits at the correct time.
+5. Making sure the TX and RX modules worked correctly together.
+
+Simulation and waveform inspection were used to identify and solve these problems.
+
+---
+
+# Reflection
+
+UART was a significant step up from the smaller digital logic projects I had previously built.
+
+The earlier projects focused mainly on individual components such as flip-flops, registers, counters and FSMs. In this project, those concepts had to work together as a complete communication system.
+
+The project helped me understand how a real hardware interface can be constructed from relatively simple digital building blocks.
+
+It also showed me the importance of simulation. Instead of only checking whether the Verilog compiled, I could inspect the actual timing and behavior of the signals and verify that the system worked correctly.
+
+This project gives me a useful foundation for the next computer components, especially SPI, memory and the ALU.
+
+---
+
+# References
+
+- [Nandland – UART](https://nandland.com/uart-serial-port-module/)
+- [HDLBits](https://hdlbits.01xz.net/wiki/Main_Page)
+- [Project F Tutorials](https://projectf.io/tutorials/)
+
+---
+
+# Next Step
+
+The next project in the Computer Components section is:
+
+SPI From Scratch
+
+After completing UART, I will continue building hardware communication interfaces before moving on to memory components and the ALU.
