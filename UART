@@ -32,11 +32,6 @@ This project uses the 8N1 UART format:
 - 1 stop bit
 - LSB transmitted first
 
-## UART Frame
-
-Idle | Start | D0 | D1 | D2 | D3 | D4 | D5 | D6 | D7 | Stop | Idle
-  1     0
-
 ---
 
 # Part 1 – Baud Rate Generator
