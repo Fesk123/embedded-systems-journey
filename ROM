@@ -1,1 +1,151 @@
+# ROM
+
+## Goal
+
+Build a Read-Only Memory (ROM) in Verilog and understand how digital systems use addresses to access stored data.
+
+The purpose of this project is to understand the basic principles of memory before moving on to RAM and Register Files.
+
+---
+
+# What is ROM?
+
+ROM (Read-Only Memory) is a type of memory where data is stored at specific addresses and can be read by providing an address.
+
+The basic operation is:
+
+   Address
+      │
+      ▼
+┌───────────┐
+│    ROM    │
+└─────┬─────┘
+      │
+      ▼
+   Data Out
+
+The address determines which stored value is returned.
+
+---
+
+# Specifications
+
+| Parameter | Value         |
+|-----------|---------------|
+| Address Width | 4 bits    |
+| Data Width | 8 bits       |
+| Number of Addresses | 16  |
+| Data per Address | 8 bits |
+
+The number of available memory locations is:
+
+2^Address Width = 2^4 = 16
+
+Therefore, the ROM contains 16 different addresses, each storing 8 bits of data.
+
+---
+
+# Memory Map
+
+The ROM was initialized with test data:
+
+| Address | Data       |
+|---------|------------|
+|  0000   |  10101010  |
+|  0001   |  11110000  |
+|  0010   |  01010101  |
+|  0011   |  00001111  |
+|  0100   |  11001100  |
+|  0101   |  00110011  |
+|  0110   |  11111111  |
+|  0111   |  00000000  |
+
+The remaining addresses were also initialized to known values for simulation and verification.
+
+---
+
+# Architecture
+
+                 Address
+                    │
+                    ▼
+             ┌─────────────┐
+             │             │
+             │     ROM     │
+             │             │
+             │ Memory Array│
+             │             │
+             └──────┬──────┘
+                    │
+                    ▼
+                 Data Out
+
+The address input selects one location in the memory array.
+
+The data stored at that location is then returned through the data output.
+
+---
+
+# Concepts Learned
+
+- ROM
+- Memory arrays
+- Memory addressing
+- Address width
+- Data width
+- Parameters
+- Memory initialization
+- Reading from memory
+- Memory depth
+- Memory organization
+
+---
+
+# Parameters
+
+The ROM was designed using parameters so that its size can be changed without rewriting the entire module.
+
+The important parameters are:
+
+- ADDR_WIDTH
+- DATA_WIDTH
+
+The memory depth is determined by the address width:
+
+Depth = 2^ADDR_WIDTH
+
+This makes the design more reusable and introduces the type of parameterization that will become useful in larger hardware systems.
+
+---
+
+# Simulation
+
+---
+
+# Result
+---
+
+# Reflection
+---
+
+# Problems
+---
+
+# Project Structure
+
+```
+
+---
+
+# References
+
+- [Nandland – Learn Verilog](https://nandland.com/learn-verilog/)
+- [HDLBits](https://hdlbits.01xz.net/wiki/Main_Page)
+- [Project F Tutorials](https://projectf.io/tutorials/)
+
+---
+
+# Next Step
+
+
 
