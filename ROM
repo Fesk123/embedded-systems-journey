@@ -101,39 +101,44 @@ The data stored at that location is then returned through the data output.
 
 ---
 
-# Parameters
-
-The ROM was designed using parameters so that its size can be changed without rewriting the entire module.
-
-The important parameters are:
-
-- ADDR_WIDTH
-- DATA_WIDTH
-
-The memory depth is determined by the address width:
-
-Depth = 2^ADDR_WIDTH
-
-This makes the design more reusable and introduces the type of parameterization that will become useful in larger hardware systems.
-
----
-
 # Simulation
+
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/03-computer-components/ROM%20simulation.png
 
 ---
 
 # Result
+
+The ROM successfully returned the correct data for the tested addresses.
+
+The simulation confirmed that:
+
+- The address correctly selects a memory location.
+- The correct data is returned.
+- Different addresses contain independent values.
+- The memory behaves as expected for a read-only component.
+
 ---
 
 # Reflection
+
+This project was my first implementation of a memory component.
+
+Compared to the previous projects, the main difference is that the circuit is no longer simply performing a logical operation. Instead, the input address is used to select stored information.
+
+I also learned why address width and data width are important when designing memory. Increasing the address width increases the number of available memory locations, while increasing the data width increases the amount of data that can be stored at each location.
+
+This project gave me a basic understanding of how memory is organized, which will be important when I move on to RAM and eventually CPU architecture.
+
 ---
 
 # Problems
----
 
-# Project Structure
+The main challenge was understanding how a memory array is represented in Verilog and how an address is used to access a specific element.
 
-```
+Another important part was understanding the relationship between address width and memory depth.
+
+Simulation made it easier to verify that each address returned the expected value.
 
 ---
 
@@ -147,5 +152,20 @@ This makes the design more reusable and introduces the type of parameterization 
 
 # Next Step
 
+The next project is:
 
+RAM
 
+RAM will extend the concepts learned here by adding the ability to write data into memory as well as read it.
+
+The progression will therefore be:
+
+ROM
+ ↓
+RAM
+ ↓
+Register File
+ ↓
+ALU
+
+These components will later form important building blocks for understanding CPU and SoC architecture.
