@@ -1,1 +1,177 @@
+# RAM
 
+## Goal
+
+Build a parameterized Random Access Memory (RAM) in Verilog that can store, read and write data at different memory addresses.
+
+This project builds on the ROM implementation by adding the ability to modify stored data.
+
+---
+
+# What is RAM?
+
+RAM (Random Access Memory) is a type of memory where data can be both read and written.
+
+The basic operation is:
+
+                 Address
+                    │
+                    ▼
+             ┌─────────────┐
+Data In ────►│             │
+             │     RAM     │────► Data Out
+             │             │
+             └──────▲──────┘
+                    │
+               Write Enable
+                    │
+                  Clock
+
+The address determines which memory location is accessed.
+
+When "Write Enable" is active, data can be written to that location on the clock edge.
+
+---
+
+# Specifications
+
+| Parameter | Value      |
+|-----------|------------|
+| Address Width | 4 bits |
+| Data Width | 8 bits    |
+| Memory Depth | 16      |
+| Write | Synchronous    |
+| Read | Asynchronous    |
+
+The memory depth is determined by the address width:
+
+2^Address Width = 2^4 = 16
+
+Therefore, the RAM contains 16 memory locations, with each location storing 8 bits.
+
+---
+
+# RAM Operations
+
+## Write
+
+When "Write Enable" is active, the input data is written to the selected address on the rising edge of the clock.
+
+Address = 0011
+Data In = 10101010
+WE = 1
+
+Clock ↑
+
+RAM[0011] = 10101010
+
+## Read
+
+The data stored at the selected address is available at the output.
+
+Address
+   │
+   ▼
+ RAM
+   │
+   ▼
+Data Out
+
+---
+
+# Concepts Learned
+
+- RAM
+- Memory arrays
+- Memory addressing
+- Read operation
+- Write operation
+- Write enable
+- Clocked writing
+- Address width
+- Data width
+- Memory depth
+- Parameters
+- Sequential logic
+
+---
+
+# Architecture
+
+                 Address
+                    │
+                    ▼
+             ┌─────────────┐
+             │             │
+Data In ────►│     RAM     │────► Data Out
+             │             │
+             └──────▲──────┘
+                    │
+              Write Enable
+                    │
+                   Clock
+
+---
+
+# Memory Organization
+
+The RAM contains 16 addresses:
+
+| Address | Data       |
+|---------|------------|
+| 0000    |  00000001  |
+| 0001    |  00000010  |
+| 0010    |  00000011  |
+| 0011    |  00000100  |
+| 0100    |  00000101  |
+| 0101    |  00000110  |
+| 0110    |  00000111  |
+| 0111    |  00001000  |
+| 1000    |  00001001  |
+| 1001    |  00001010  |
+| 1010    |  00001011  |
+| 1011    |  00001100  |
+| 1100    |  00001101  |
+| 1101    |  00001110  |
+| 1110    |  00001111  |
+| 1111    |  00010000  |
+
+---
+
+# Simulation
+
+## Write Test
+
+
+## Read Test
+
+## Write Enable Test
+
+---
+
+# Result
+
+---
+
+# Reflection
+
+---
+
+# Problems
+
+---
+
+# References
+
+- [Nandland – Learn Verilog](https://nandland.com/learn-verilog/)
+- [HDLBits](https://hdlbits.01xz.net/wiki/Main_Page)
+- [Project F Tutorials](https://projectf.io/tutorials/)
+
+---
+
+# Next Step
+
+
+
+
+These components will later become important building blocks for understanding CPU architecture and SoC design.
