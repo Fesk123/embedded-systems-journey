@@ -140,24 +140,46 @@ The RAM contains 16 addresses:
 
 # Simulation
 
-## Write Test
-
-
-## Read Test
-
-## Write Enable Test
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/03-computer-components/RAM%20simulation.png
 
 ---
 
 # Result
 
+The RAM successfully:
+
+- Stored data at selected addresses.
+- Returned stored data when an address was selected.
+- Prevented writes when "Write Enable" was inactive.
+- Maintained previously stored values between write operations.
+
+The simulation confirmed that the RAM behaved as expected.
+
 ---
 
 # Reflection
 
+RAM was an important step after implementing ROM because it introduced the ability to modify stored data.
+
+The main difference between the two is that ROM contains fixed data, while RAM allows the hardware to write new values into memory.
+
+This project also helped me understand the relationship between memory addresses, data width and memory depth.
+
+The use of a clock for writing demonstrated how memory can be controlled by sequential logic.
+
+This is an important concept for CPU architecture because a processor needs memory that it can both read from and write to.
+
 ---
 
 # Problems
+
+The main challenge was understanding when data should actually be written to the memory.
+
+The write operation depends on both the "Write Enable" signal and the clock edge.
+
+Another challenge was verifying that a write to one address did not accidentally change data stored at another address.
+
+The testbench was used to write different values to different addresses and then read them back.
 
 ---
 
@@ -171,7 +193,10 @@ The RAM contains 16 addresses:
 
 # Next Step
 
+The next project is:
 
+Register File
 
+The Register File will build on the memory concepts learned in ROM and RAM and introduce multiple registers that can be accessed using register addresses.
 
 These components will later become important building blocks for understanding CPU architecture and SoC design.
