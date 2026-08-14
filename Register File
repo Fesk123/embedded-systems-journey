@@ -135,25 +135,102 @@ This is useful for CPU instructions that operate on two operands.
 
 # Concepts Learned
 
+- Register File
+- Registers
+- Register addressing
+- Read ports
+- Write ports
+- Synchronous write
+- Asynchronous read
+- Memory arrays
+- Parameters
+- CPU register architecture
+
 ---
 
 # Simulation
+
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/03-computer-components/Register%20File%20Simulation.png
 
 ---
 
 # CPU Connection
 
+A Register File is an important component inside a CPU.
+
+A simplified CPU datapath can be represented as:
+
+             Instruction
+                  │
+                  ▼
+          ┌───────────────┐
+          │ Register File │
+          └───────┬───────┘
+                  │
+             ┌────┴────┐
+             │         │
+             ▼         ▼
+          Operand A  Operand B
+             │         │
+             └────┬────┘
+                  ▼
+                ALU
+                  │
+                  ▼
+               Result
+
+
+For example, an instruction equivalent to:
+
+R3 = R1 + R2
+
+could work conceptually like this:
+
+
+R1 ─────► Read Port A ──┐
+                        │
+                        ▼
+                       ALU ───► R3
+                        ▲
+                        │
+R2 ─────► Read Port B ──┘
+
+This is one of the reasons Register Files are important when learning CPU architecture.
+
 ---
 
 # Result
+
+The Register File successfully stored and retrieved data using register addresses.
+
+Two registers could be read simultaneously, while data could be written to a selected register on the clock edge.
+
+The simulation confirmed that the registers behaved independently and that writes were only performed when "Write Enable" was active.
 
 ---
 
 # Reflection
 
+The Register File was an important step toward understanding how a CPU is constructed.
+
+ROM and RAM demonstrated general memory concepts, while the Register File showed how a CPU can have a small collection of fast-access storage locations specifically designed for instruction operands.
+
+The two read ports were particularly important because they demonstrated how a CPU can obtain two operands at the same time before sending them to an ALU.
+
+This project connected the memory concepts from the previous projects to the architecture of a CPU.
+
+
 ---
 
 # Problems
+
+The main challenge was understanding the difference between a general RAM and a Register File.
+
+The Register File uses multiple read ports so that several registers can be accessed at the same time.
+
+Another challenge was ensuring that writes only occurred on the correct clock edge and when "Write Enable" was active.
+
+Simulation was used to verify the read and write behavior.
 
 ---
 
@@ -166,3 +243,7 @@ This is useful for CPU instructions that operate on two operands.
 ---
 
 # Next Step
+
+Simple ALU
+
+The ALU will combine many of the concepts learned so far and introduce the arithmetic and logical operations that form a central part of a CPU datapath.
