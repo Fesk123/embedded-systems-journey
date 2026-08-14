@@ -1,1 +1,168 @@
+# Register File
 
+## Goal
+
+Build a small multi-register Register File in Verilog and understand how CPUs use registers to store temporary data and provide operands to the ALU.
+
+The Register File will support two simultaneous read operations and one write operation.
+
+---
+
+# What is a Register File?
+
+A Register File is a collection of registers that can be accessed using register addresses.
+
+A CPU uses registers to store values that are currently being used by instructions.
+
+              Register Address
+                     │
+                     ▼
+              ┌─────────────┐
+              │             │
+              │ Register    │
+              │    File     │
+              │             │
+              └─────────────┘
+                     │
+                     ▼
+                   Data
+
+---
+
+# Specifications
+
+| Parameter | Value                  |
+|-----------|------------------------|
+| Number of Registers | 8            |
+| Register Width      | 8 bits       |
+| Read Ports          | 2            |
+| Write Ports         | 1            |
+| Write               | Synchronous  |
+| Read                | Asynchronous |
+
+The number of bits required for a register address is:
+
+log2(8) = 3 bits
+
+Therefore, a 3-bit address can select any of the 8 registers.
+
+---
+
+# Architecture
+
+                    Read Address A
+                           │
+                           ▼
+                     ┌───────────┐
+                     │           │
+                     │           │──────► Read Data A
+                     │ Register  │
+                     │   File    │
+                     │           │──────► Read Data B
+                     │           │
+                     └─────▲─────┘
+                           │
+                    Read Address B
+
+
+Write Address ─────────────┐
+Write Data ────────────────┼──────► Register File
+Write Enable ──────────────┘
+                           │
+                         Clock
+
+---
+
+# Registers
+
+The Register File contains 8 registers:
+
+R0
+R1
+R2
+R3
+R4
+R5
+R6
+R7
+
+Each register stores 8 bits.
+
+---
+
+# Write Operation
+
+A register is written when "Write Enable" is active.
+
+Example:
+
+Write Address = 001
+Write Data = 00011001
+Write Enable = 1
+
+Clock ↑
+
+After the clock edge:
+
+R1 = 00011001
+
+---
+
+# Read Operation
+
+The Register File has two read ports.
+
+This allows two registers to be read at the same time.
+
+Example:
+
+Read Address A = 001
+Read Address B = 010
+
+If:
+
+R1 = 25
+R2 = 10
+
+then:
+
+Read Data A = 25
+Read Data B = 10
+
+This is useful for CPU instructions that operate on two operands.
+
+---
+
+# Concepts Learned
+
+---
+
+# Simulation
+
+---
+
+# CPU Connection
+
+---
+
+# Result
+
+---
+
+# Reflection
+
+---
+
+# Problems
+
+---
+
+# References
+
+- Nandland – Learn Verilog
+- HDLBits
+- Project F Tutorials
+
+---
+
+# Next Step
