@@ -222,21 +222,56 @@ Zero = 0
 
 # Concepts Learned
 
+- ALU
+- Arithmetic operations
+- Binary addition
+- Binary subtraction
+- Bitwise operations
+- Shifting
+- Comparisons
+- Combinational logic
+- Operation selection
+- Control signals
+- Flags
+- CPU datapaths
+
 ---
 
 # Simulation
+
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/03-computer-components/ALU%20simulation.png
 
 ---
 
 # Result
 
+The ALU successfully performed all implemented arithmetic and logical operations.
+
+The simulation confirmed that the operation control signal correctly selected the desired operation and that the resulting values matched the expected results.
+
+The zero flag also correctly indicated when the ALU result was zero.
+
 ---
 
 # Reflection
 
+The ALU was the final project in the Computer Components section and brought together many of the concepts learned previously.
+
+The earlier projects focused on individual building blocks such as registers, memory and communication interfaces. The ALU showed how several of these concepts fit into a CPU datapath.
+
+One important realization was that the ALU itself does not need a clock. It is combinational logic, meaning that its output is determined directly by its inputs and operation signal.
+
+The project also reinforced the difference between arithmetic operations and bitwise logical operations.
+
 ---
 
 # Problems
+
+The main challenge was making sure that each operation produced the correct result and that the operation control signal selected the correct logic.
+
+Testing binary operations manually helped verify the expected results.
+
+Another important part was testing edge cases such as zero results and bit shifting.
 
 ---
 
@@ -250,3 +285,10 @@ Zero = 0
 
 # Next Step
 
+The next stage is:
+
+Step 4 – Understanding SoC
+
+The focus will now move from individual hardware components to understanding how they are connected together.
+
+The goal is not to build a CPU yet, but to understand how the different components communicate inside a complete SoC.
