@@ -21,10 +21,10 @@ During this week I learned the basic structure of a Verilog module and how hardw
 
 I became familiar with:
 
-- `module`
-- `input` and `output`
-- `wire`
-- `assign`
+- "module"
+- "input" and "output"
+- "wire"
+- "assign"
 - combinational logic
 - truth tables
 - writing testbenches
@@ -146,3 +146,106 @@ The next stage will focus on building larger computer components.
 I will start by implementing a UART from scratch, followed by SPI, memory components and an ALU.
 
 The goal is to move from individual digital building blocks toward the components that make up a computer system.
+
+
+########## Journal – Step 3: Computer Components ##########
+
+## What I Did
+
+During this step, I focused on building and understanding several of the hardware components that are needed to construct a computer system.
+
+I started by building a UART from scratch in Verilog. I implemented a Baud Rate Generator, UART Transmitter and UART Receiver, and verified their behavior using simulation.
+
+After UART, I built an SPI communication system consisting of an SPI Master and SPI Slave. I simulated the communication between them to verify that data was transferred correctly.
+
+I then moved on to memory components. I implemented a ROM, followed by RAM, and finally a Register File. These projects helped me understand how data can be stored, addressed, read and written in digital hardware.
+
+The final project of this step was a Simple ALU (Arithmetic Logic Unit). I implemented several arithmetic and logical operations, including addition, subtraction, AND, OR, XOR and shift operations.
+
+## What I Learned
+
+The most important thing I learned during this step is how individual digital components can be combined to form more complex computer hardware.
+
+I learned about:
+
+- UART
+- SPI
+- Serial communication
+- Baud rate and timing
+- Master/Slave communication
+- ROM
+- RAM
+- Memory addressing
+- Register Files
+- Read and write operations
+- ALUs
+- Combinational logic
+- CPU datapaths
+
+I also became more comfortable with Verilog, testbenches and waveform analysis using GTKWave.
+
+## Challenges
+
+One of the more difficult parts was understanding the timing involved in communication protocols.
+
+With UART and SPI, data has to be transmitted and sampled at the correct time. Using GTKWave made it much easier to understand what was actually happening to the signals during simulation.
+
+Memory components were also challenging because I had to think more about how data is stored and accessed rather than simply performing logical operations.
+
+The Register File was particularly useful because it introduced the idea of multiple registers being accessed by a CPU.
+
+## Problems I Solved
+
+Most of the problems I encountered were solved through simulation and waveform analysis.
+
+When a signal did not behave as expected, I could inspect it in GTKWave and determine where the problem occurred.
+
+This taught me that debugging hardware is not only about looking at the Verilog code. It is also important to analyze the actual behavior of the simulated circuit.
+
+## Reflection
+
+This step felt much more connected to building a real computer than the previous steps.
+
+Earlier, I was mainly building individual components such as AND gates, multiplexers, registers and counters. During this step, I started building components that are actually used as parts of larger computer systems.
+
+One of the most important things I realized is that a CPU is not one extremely complicated component. It is made up of many smaller components that work together.
+
+For example, a Register File can provide two operands to an ALU, the ALU performs an operation on those operands, and the result can then be written back into a register.
+
+This gave me a much clearer understanding of how a CPU datapath works.
+
+## What I Would Improve
+
+If I were to redo some of the projects, I would spend more time testing edge cases and creating more extensive testbenches.
+
+I would also like to experiment with the components on a real FPGA board once I have one available, rather than only verifying them through simulation.
+
+## Next Step
+
+Step 3 is now complete.
+
+The next step is Step 4 – Understanding SoC Architecture.
+
+Instead of focusing on individual components, I will now study how they are connected together in a complete system.
+
+The architecture I will focus on is:
+
+CPU
+
+↓
+
+Memory Bus
+
+↓
+
+Memory  
+UART  
+GPIO  
+Timer
+
+↓
+
+Interrupts
+
+The goal is to understand how these components communicate with each other and how a complete SoC is structured before moving further towards RISC-V and Linux.
+
