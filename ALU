@@ -1,1 +1,252 @@
+# Simple ALU
+
+## Goal
+
+Build a simple Arithmetic Logic Unit (ALU) in Verilog that can perform arithmetic, logical and shift operations.
+
+The ALU is one of the most important building blocks inside a CPU because it performs operations on data provided by the processor.
+
+---
+
+# What is an ALU?
+
+An ALU (Arithmetic Logic Unit) is a digital circuit that performs mathematical and logical operations.
+
+A simplified CPU datapath can be represented as:
+
+             ┌───────────────┐
+             │ Register File │
+             └───────┬───────┘
+                     │
+                ┌────┴────┐
+                │         │
+                ▼         ▼
+             Operand A  Operand B
+                │         │
+                └────┬────┘
+                     ▼
+                ┌─────────┐
+                │   ALU   │
+                └────┬────┘
+                     │
+                     ▼
+                  Result
+
+The ALU receives operands and an operation control signal and produces a result.
+
+---
+
+# Specifications
+
+| Parameter  | Value         |
+|------------|---------------|
+| Data Width | 8 bits        |
+| Input A    | 8 bits        |
+| Input B    | 8 bits        |
+| Result     | 8 bits        |
+| Logic Type | Combinational |
+
+---
+
+# Operations
+
+The ALU supports the following operations:
+
+| Operation | Description |
+|-----------|-------------|
+|  ADD      | Addition    |
+|  SUB      | Subtraction |
+|  AND      | Bitwise AND |
+|  OR       | Bitwise OR  |
+|  XOR      | Bitwise XOR |
+|  SHL      | Shift left  |
+|  SHR      | Shift right |
+|  CMP      | Compare     |
+
+---
+
+# Architecture
+
+             A ─────────────┐
+                            │
+                            ▼
+                       ┌─────────┐
+             B ───────►│         │
+                       │   ALU   │──────► Result
+          Operation ──►│         │
+                       └────┬────┘
+                            │
+                            ▼
+                          Zero
+                          Flag
+
+---
+
+# ADD
+
+The ADD operation performs binary addition.
+
+Example:
+
+A = 10
+B = 5
+
+10 + 5 = 15
+
+  00001010
++ 00000101
+──────────
+  00001111
+
+---
+
+# SUB
+
+The SUB operation performs binary subtraction.
+
+Example:
+
+A = 10
+B = 5
+
+10 - 5 = 5
+
+  00001010
+- 00000101
+──────────
+  00000101
+
+
+---
+
+# AND
+
+The AND operation performs a bitwise AND.
+
+A      = 10101010
+B      = 11001100
+Result = 10001000
+
+---
+
+# OR
+
+The OR operation performs a bitwise OR.
+
+A      = 10101010
+B      = 11001100
+Result = 11101110
+
+---
+
+# XOR
+
+The XOR operation performs a bitwise exclusive OR.
+
+A      = 10101010
+B      = 11001100
+Result = 01100110
+
+---
+
+# Shift Left
+
+The SHL operation shifts the bits in A to the left.
+
+Example:
+
+A = 00001111
+
+A << 1
+
+Result = 00011110
+
+---
+
+# Shift Right
+
+The SHR operation shifts the bits in A to the right.
+
+Example:
+
+A = 11110000
+
+A >> 1
+
+Result = 01111000
+
+---
+
+# Compare
+
+The CMP operation compares the two inputs.
+
+It compares and picks the larger number.
+
+Example:
+
+A = 10
+B = 15
+
+Result = 15
+
+---
+
+# Zero Flag
+
+The ALU contains a zero flag.
+
+The flag is set when the result is zero.
+
+Example:
+
+A = 5
+B = 5
+
+SUB
+
+Result = 0
+Zero = 1
+
+For a non-zero result:
+
+A = 10
+B = 5
+
+SUB
+
+Result = 5
+Zero = 0
+
+---
+
+# Concepts Learned
+
+---
+
+# Simulation
+
+---
+
+# Result
+
+---
+
+# Reflection
+
+---
+
+# Problems
+
+---
+
+# References
+
+- Nandland – Learn Verilog
+- HDLBits
+- Project F Tutorials
+
+---
+
+# Next Step
 
