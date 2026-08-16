@@ -250,30 +250,60 @@ The complete architecture studied in this project is:
 
 ## Basic SoC
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/04-soc-architecture/Basic%20SoC.png
 
 ## SoC with Peripherals
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/04-soc-architecture/SoC%20with%20Peripherals.png
 
 ## Interrupt Flow
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/04-soc-architecture/interrupt%20flow.png
 
 ## Final SoC Architecture
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/04-soc-architecture/Final%20SoC.png
 
 ---
 
 # Reflection
 
+This project was a change from the previous projects because I focused mainly on understanding architecture rather than implementing individual hardware modules.
+
+Previously, I built components such as UART, SPI, ROM, RAM, a Register File and an ALU separately.
+
+This project showed how these types of components can become parts of a larger system.
+
+One of the most important concepts I learned was that the CPU does not need to communicate directly with every peripheral. Instead, a bus provides a common communication system between the CPU, memory and peripherals.
+
+I also learned about memory-mapped I/O, where peripherals can be assigned addresses and accessed using memory operations.
+
+This concept will become particularly important when I start learning about RISC-V and Linux.
+
 ---
 
 # Problems
+
+The biggest challenge was understanding the difference between the individual hardware components I had already built and the architecture connecting them together.
+
+It was easy to understand what a UART or RAM does individually, but understanding how the CPU communicates with them through a bus required looking at the system as a whole.
+
+Creating block diagrams helped me understand the relationships between the components.
 
 ---
 
 # What I Would Improve
 
+I would like to eventually implement a small version of this architecture in Verilog and run it on an FPGA.
+
+For now however, the purpose of this project is to understand the architecture before implementing it.
 
 ---
 
 # Next Step
 
+The next project is:
+
+Memory Bus
+
+The next step will be to study how the CPU actually transfers addresses, data and control signals between itself and the different components of the SoC.
