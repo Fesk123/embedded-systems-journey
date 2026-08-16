@@ -1,1 +1,279 @@
+# Simple SoC Architecture
+
+## Goal
+
+Understand how the main components of a System on Chip (SoC) are connected and how they communicate with each other.
+
+The goal is to understand the architecture well enough to explain how a CPU communicates with memory and peripherals.
+
+---
+
+# What is an SoC?
+
+SoC stands for System on Chip.
+
+An SoC combines multiple components into one system, such as:
+
+- CPU
+- Memory
+- Peripherals
+- Bus
+- Timers
+- Interrupt controllers
+
+A simplified SoC can be represented as:
+
+CPU
+ ↓
+Bus
+ ├── RAM
+ ├── UART
+ ├── GPIO
+ └── Timer
+       ↓
+   Interrupt
+       ↓
+      CPU
+
+---
+
+# CPU
+
+The CPU is responsible for executing instructions and controlling the rest of the system.
+
+The CPU can:
+
+- Fetch instructions
+- Execute instructions
+- Read registers
+- Write registers
+- Read memory
+- Write memory
+- Communicate with peripherals
+
+The CPU does not need to directly contain every peripheral.
+
+Instead, it communicates with them through a bus.
+
+---
+
+# Memory
+
+Memory is used to store instructions and data.
+
+The SoC can contain different types of memory.
+
+CPU
+ │
+ ▼
+Bus
+ │
+ ├──► ROM
+ │
+ └──► RAM
+
+ROM can be used for fixed data or boot code, while RAM is used for data that needs to be modified during operation.
+
+---
+
+# Peripherals
+
+Peripherals are hardware components that allow the CPU to interact with the outside world or perform specialized tasks.
+
+Examples include:
+
+- UART
+- SPI
+- GPIO
+- Timer
+
+The CPU communicates with these peripherals through the system bus.
+
+For example:
+
+CPU
+ │
+ ▼
+Bus
+ │
+ ▼
+UART
+ │
+ ▼
+Serial Output
+
+---
+
+# Bus
+
+The bus provides a communication path between the CPU and other components.
+
+A simplified bus can contain:
+
+- Address
+- Data
+- Read/Write
+- Control
+
+Architecture:
+
+              CPU
+               │
+               ▼
+             BUS
+        ┌──────┼──────┐
+        ▼      ▼      ▼
+       RAM    UART   GPIO
+
+The CPU can use the bus to select a component and transfer data.
+
+---
+
+# Memory-Mapped I/O
+
+Peripherals can be assigned specific addresses in the system's address space.
+
+For example:
+
+0x00000000 → RAM
+0x10000000 → UART
+0x20000000 → GPIO
+0x30000000 → Timer
+
+This allows the CPU to communicate with peripherals using normal memory read and write operations.
+
+For example:
+
+CPU
+ │
+ │ write 0x41
+ │ address 0x10000000
+ ▼
+Bus
+ │
+ ▼
+UART
+
+The CPU does not necessarily need a special instruction for the UART.
+
+It can simply write to the address assigned to the UART.
+
+---
+
+# Timer
+
+A hardware timer can count clock cycles and generate an event when a specified value is reached.
+
+Clock
+  ↓
+Counter
+  ↓
+Timer
+  ↓
+Interrupt
+  ↓
+CPU
+
+Timers are useful for tasks such as:
+
+- Generating periodic events
+- Measuring time
+- Scheduling tasks
+- Creating delays
+
+---
+
+# Interrupts
+
+An interrupt allows hardware to notify the CPU that something needs attention.
+
+For example:
+
+UART receives data
+       ↓
+    Interrupt
+       ↓
+       CPU
+       ↓
+Interrupt Handler
+
+This allows the CPU to respond to events without constantly checking every peripheral.
+
+---
+
+# Complete SoC Architecture
+
+The complete architecture studied in this project is:
+
+                    ┌─────────────┐
+                    │     CPU     │
+                    └──────┬──────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │     BUS     │
+                    └──────┬──────┘
+                           │
+             ┌─────────────┼─────────────┐
+             │             │             │
+             ▼             ▼             ▼
+           RAM            UART          GPIO
+                           │
+                           ▼
+                         Timer
+                           │
+                           ▼
+                      Interrupt
+                           │
+                           └────────────► CPU
+
+---
+
+# Concepts Learned
+
+- System on Chip (SoC)
+- CPU
+- Memory
+- Peripherals
+- System buses
+- Address and data buses
+- Memory-mapped I/O
+- GPIO
+- Timers
+- Interrupts
+- CPU-peripheral communication
+- Basic SoC architecture
+
+---
+
+# Diagrams
+
+## Basic SoC
+
+
+## SoC with Peripherals
+
+
+## Interrupt Flow
+
+
+## Final SoC Architecture
+
+
+---
+
+# Reflection
+
+---
+
+# Problems
+
+---
+
+# What I Would Improve
+
+
+---
+
+# Next Step
 
