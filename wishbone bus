@@ -327,6 +327,8 @@ The RAM acts as the Slave.
 
 # Simulation
 
+Link: 
+
 ---
 
 # Expected Write Cycle
@@ -373,6 +375,20 @@ Master
 
 # Concepts Learned
 
+- Wishbone bus
+- Bus Master
+- Bus Slave
+- Synchronous bus communication
+- "CYC"
+- "STB"
+- "WE"
+- "ACK"
+- Address signals
+- Data signals
+- Read cycles
+- Write cycles
+- Bus transactions
+- CPU-to-peripheral communication
 ---
 
 # Difference Between Memory Bus and Wishbone
@@ -434,13 +450,45 @@ This is one of the concepts needed to understand a complete SoC.
 
 # Reflection
 
+This project introduced me to a real bus protocol instead of the simplified bus I created in the previous project.
+
+The biggest difference I noticed was that Wishbone defines specific signals and rules for how a transaction takes place.
+
+The concepts of Master and Slave were especially important.
+
+The Master initiates a transaction, while the Slave responds to it.
+
+I also learned that signals such as "CYC", "STB" and "ACK" are used to control the transaction and indicate when it has completed.
+
+This made it easier to understand how different hardware components can communicate using a common interface.
+
 ---
 
 # Problems
 
+One of the main challenges was understanding the relationship between "CYC", "STB" and "ACK".
+
+At first, these signals can seem similar because they are all involved in controlling the bus transaction.
+
+Studying the waveform helped me understand their different purposes.
+
+Another challenge was making sure that the Slave only responded to valid transactions and that the Master waited for the acknowledgement before continuing.
+
 ---
 
 # What I Would Improve
+
+I would like to extend the implementation to support more realistic Wishbone functionality.
+
+Possible improvements include:
+
+- Multiple slaves
+- Address decoding
+- Variable response times
+- Error responses
+- More advanced bus cycles
+
+For this project, however, a simple Classic synchronous Master-to-Slave connection is sufficient.
 
 ---
 
@@ -454,3 +502,24 @@ This is one of the concepts needed to understand a complete SoC.
 ---
 
 # Next Step
+
+The next project is:
+
+Memory-Mapped I/O
+
+The next step will be to understand how peripherals such as UART, GPIO and timers can be assigned addresses and accessed by the CPU through the bus.
+
+The architecture will become:
+
+                     CPU
+                      │
+                      ▼
+               Wishbone Bus
+                      │
+        ┌─────────────┼─────────────┐
+        ▼             ▼             ▼
+       RAM           UART          GPIO
+                      │
+                    Timer
+
+The goal is to understand how the same bus used to access memory can also be used to control hardware peripherals.
