@@ -1,1 +1,454 @@
+# Memory Bus
 
+## Goal
+
+Understand how a CPU communicates with memory through a memory bus.
+
+The goal of this project is to move from simply understanding that a SoC contains a bus to understanding how addresses, data and control signals actually move across the bus.
+
+---
+
+## What is a Memory Bus?
+
+A memory bus is a communication system that allows a CPU to communicate with memory.
+
+A simplified architecture looks like this:
+
+        ┌─────────┐
+        │   CPU   │
+        └────┬────┘
+             │
+             │ Address
+             │ Data
+             │ Read/Write
+             ▼
+       ┌───────────┐
+       │    BUS    │
+       └─────┬─────┘
+             │
+             ▼
+       ┌───────────┐
+       │  Memory   │
+       └───────────┘
+
+The bus provides a common communication path between the CPU and other components.
+
+---
+
+## Bus Signals
+
+The simplified bus in this project uses the following signals:
+
+| Signal       | Purpose                                      |
+|--------------|----------------------------------------------|
+| address      | Selects the memory location                  |
+| write_data   | Data sent from the CPU                       |
+| read_data    | Data returned to the CPU                     |
+| read_enable  | Requests a read operation                    |
+| write_enable | Requests a write operation                   |
+| clock        | Synchronizes the system                      |
+| ready        | Indicates that the transaction has completed |
+
+---
+
+## Address
+
+The CPU uses an address to select where data should be read from or written to.
+
+For example:
+
+Address = 0x1000
+
+means that the CPU wants to access the memory location at `0x1000`.
+
+Conceptually:
+
+CPU
+ │
+ │ Address = 0x1000
+ ▼
+BUS
+ │
+ ▼
+Memory[0x1000]
+
+The address therefore determines which location the CPU wants to access.
+
+---
+
+## Write Transaction
+
+A write operation transfers data from the CPU to memory.
+
+For example:
+
+Address    = 0x1000
+Write Data = 0x42
+Write      = 1
+
+The transaction can be represented as:
+
+        CPU
+         │
+         │ Address = 0x1000
+         │ Data = 0x42
+         │ Write = 1
+         ▼
+        BUS
+         │
+         ▼
+      Memory
+         │
+         ▼
+Memory[0x1000] = 0x42
+
+After the write operation:
+
+0x1000 → 0x42
+
+---
+
+## Read Transaction
+
+A read operation transfers data from memory to the CPU.
+
+For example:
+
+Address = 0x1000
+Read = 1
+
+The transaction can be represented as:
+
+        CPU
+         │
+         │ Address = 0x1000
+         │ Read = 1
+         ▼
+        BUS
+         │
+         ▼
+      Memory
+         │
+         │ Data = 0x42
+         ▼
+        BUS
+         │
+         ▼
+        CPU
+
+The CPU receives:
+
+Read Data = 0x42
+
+---
+
+## Read vs Write
+
+The two basic types of transactions are:
+
+### Write
+
+CPU
+ │
+ │ Address + Data + Write
+ ▼
+BUS
+ │
+ ▼
+Memory
+
+### Read
+
+CPU
+ │
+ │ Address + Read
+ ▼
+BUS
+ │
+ ▼
+Memory
+ │
+ │ Data
+ ▼
+CPU
+
+The direction of the data is therefore different.
+
+WRITE:
+
+CPU ─────────► Memory
+
+
+READ:
+
+CPU ◄───────── Memory
+
+---
+
+## Ready / Acknowledge
+
+Some bus systems need a way for the receiving component to tell the CPU that a transaction has completed.
+
+This can be represented by a "ready" signal.
+
+CPU
+ │
+ │ Request
+ ▼
+BUS
+ │
+ ▼
+Memory
+ │
+ │ Ready
+ ▼
+BUS
+ │
+ ▼
+CPU
+
+This becomes important when different components take different amounts of time to respond.
+
+In this project, "ready" is used to indicate that the bus transaction has completed.
+
+---
+
+## Clock
+
+The bus uses the system clock to synchronize operations.
+
+A simplified transaction can be thought of as:
+
+Clock       ↑       ↑       ↑
+            │       │       │
+Address     ────────X───────
+Write       ────────X───────
+Data        ────────X───────
+Ready       ───────────────X
+
+
+The exact timing depends on the bus architecture and implementation.
+
+The important concept is that the clock provides a common timing reference for the system.
+
+---
+
+# Memory Access
+
+A memory access can be broken into several steps.
+
+### Write
+
+1. CPU selects an address
+2. CPU provides the data
+3. CPU enables write
+4. Bus transfers the request
+5. Memory stores the data
+6. Transaction completes
+
+### Read
+
+1. CPU selects an address
+2. CPU enables read
+3. Bus transfers the request
+4. Memory provides the data
+5. Bus transfers the data to the CPU
+6. Transaction completes
+
+---
+
+# Example
+
+Suppose the CPU wants to store the value "0x42" at address "0x1000".
+
+The CPU generates:
+
+Address    = 0x1000
+Write Data = 0x42
+Write      = 1
+
+The bus transfers this request to memory.
+
+After the transaction:
+
+Memory[0x1000] = 0x42
+
+If the CPU then performs a read:
+
+Address = 0x1000
+Read    = 1
+
+Memory returns:
+
+Read Data = 0x42
+
+The complete process is:
+
+        WRITE
+
+CPU
+ │
+ │ 0x1000 + 0x42 + WRITE
+ ▼
+BUS
+ │
+ ▼
+MEMORY
+ │
+ └── Memory[0x1000] = 0x42
+
+
+        READ
+
+CPU
+ │
+ │ 0x1000 + READ
+ ▼
+BUS
+ │
+ ▼
+MEMORY
+ │
+ │ 0x42
+ ▼
+BUS
+ │
+ ▼
+CPU
+
+---
+
+# Simulation
+
+---
+
+# Architecture
+
+The architecture used in this project is:
+
+                    ┌─────────┐
+                    │   CPU   │
+                    └────┬────┘
+                         │
+          ┌──────────────┼──────────────┐
+          │              │              │
+       Address          Data         Control
+          │              │              │
+          └──────────────┼──────────────┘
+                         ▼
+                  ┌─────────────┐
+                  │ Memory Bus  │
+                  └──────┬──────┘
+                         │
+                         ▼
+                  ┌─────────────┐
+                  │   Memory    │
+                  └─────────────┘
+
+---
+
+# Why Use a Bus?
+
+A bus provides a standardized communication path between different parts of a computer system.
+
+Without a bus, every component could require its own dedicated communication interface.
+
+For example:
+
+Without a common bus:
+
+CPU ─────────► RAM
+CPU ─────────► UART
+CPU ─────────► GPIO
+CPU ─────────► Timer
+
+With a bus:
+
+                 CPU
+                  │
+                  ▼
+                 BUS
+          ┌───────┼───────┐
+          ▼       ▼       ▼
+         RAM     UART    GPIO
+
+
+The bus makes it easier to connect additional components to the system.
+
+---
+
+# Connection to Peripherals
+
+The same basic bus concepts can be used to communicate with peripherals.
+
+For example:
+
+CPU
+ │
+ ▼
+BUS
+ │
+ ▼
+UART
+
+The CPU can send an address and data through the bus, and the UART can respond to that transaction.
+
+This is the foundation for memory-mapped I/O, which will be studied in a later project.
+
+---
+
+# Memory-Mapped I/O
+
+A peripheral can be assigned a specific address range.
+
+For example:
+
+0x00000000 → RAM
+0x10000000 → UART
+0x20000000 → GPIO
+0x30000000 → Timer
+
+The CPU can then communicate with a peripheral by accessing its assigned address.
+
+For example:
+
+CPU
+ │
+ │ Write 0x41
+ │ Address 0x10000000
+ ▼
+BUS
+ │
+ ▼
+UART
+
+This allows peripherals to be accessed using normal memory read and write operations.
+
+---
+
+# Concepts Learned
+
+---
+
+# Reflection
+
+---
+
+# Problems
+
+---
+
+# What I Would Improve
+
+---
+
+# References
+
+- Nandland – Learn Verilog
+- Project F – FPGA Tutorials
+- HDLBits
+- Wishbone B4 Specification
+
+---
+
+# Next Step
