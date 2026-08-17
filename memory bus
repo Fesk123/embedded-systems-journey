@@ -320,6 +320,8 @@ CPU
 
 # Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/04-soc-architecture/Memory%20bus%20simulation.png
+
 ---
 
 # Architecture
@@ -428,17 +430,63 @@ This allows peripherals to be accessed using normal memory read and write operat
 
 # Concepts Learned
 
+- Memory buses
+- Address buses
+- Data buses
+- Control signals
+- Read transactions
+- Write transactions
+- Memory addressing
+- Bus timing
+- Ready signals
+- CPU-to-memory communication
+- Synchronous digital systems
+- Basic bus architecture
+- Introduction to memory-mapped I/O
+
 ---
 
 # Reflection
+
+This project helped me understand what actually happens when a CPU accesses memory.
+
+In the previous project, I learned that a SoC contains a bus connecting the CPU to memory and peripherals. In this project, I went one level deeper and looked at the actual signals involved in a bus transaction.
+
+The most important concept was understanding the difference between a read and a write.
+
+During a write, data travels from the CPU to memory:
+
+CPU → BUS → Memory
+
+During a read, data travels in the opposite direction:
+
+CPU ← BUS ← Memory
+
+I also learned why signals such as address, read/write control and ready are needed to coordinate communication.
+
+This made the bus architecture much less abstract and helped me understand how a CPU can interact with the rest of a computer system.
 
 ---
 
 # Problems
 
+One of the main challenges was understanding the timing of a bus transaction.
+
+It was not enough to know which signals were required. I also had to understand when those signals should be valid and when the transaction should be considered complete.
+
+Using GTKWave to inspect the signals helped me understand the relationship between the clock, address, control signals and data.
+
+Another challenge was understanding the difference between the bus itself and the memory connected to it. The bus provides the communication path used to access the memory.
+
 ---
 
 # What I Would Improve
+
+I would like to make the bus more advanced in the future by supporting multiple devices and implementing a proper bus protocol.
+
+I could also add more realistic timing and allow different components to respond at different speeds.
+
+For now, the simplified bus provides the foundation needed to understand more advanced bus architectures.
 
 ---
 
@@ -452,3 +500,19 @@ This allows peripherals to be accessed using normal memory read and write operat
 ---
 
 # Next Step
+
+The next project is:
+
+Wishbone Bus
+
+The next step will be to study a real bus architecture and understand concepts such as:
+
+- Master
+- Slave
+- Address
+- Data
+- Read/Write
+- Acknowledge
+- Bus cycles
+
+The goal is to connect the simplified memory bus from this project to a real bus architecture that can be used inside an SoC.
