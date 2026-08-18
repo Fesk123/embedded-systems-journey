@@ -165,9 +165,9 @@ The system uses the following address map:
 | Address           | Peripheral | Description            |
 |-------------------|------------|------------------------|
 | "0x0000 - 0x00FF" | RAM        | General-purpose memory |
-| "0x1000"          | GPIO       | GPIO output register   |
-| "0x2000"          | UART       | UART transmit register |
-| "0x3000"          | Reserved   | Future timer           |
+| "0x1000 - 0x10FF" | GPIO       | GPIO output register   |
+| "0x2000 - 0x20FF" | UART       | UART transmit register |
+| "0x3000 - 0x30FF" | Reserved   | Future timer           |
 
 The timer address is reserved for a future project.
 
@@ -668,6 +668,8 @@ This ensures that the Master receives exactly one response for a valid transacti
 
 # Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/04-soc-architecture/memory%20mapped%20io%20simulation.png
+
 ---
 
 # Architecture Diagram
@@ -803,17 +805,75 @@ This is one of the key connections between software and hardware in an SoC.
 
 # Concepts Learned
 
+- Memory-Mapped I/O
+- Address spaces
+- Address maps
+- Address decoding
+- Peripheral selection
+- Memory-mapped registers
+- Bus routing
+- Wishbone integration
+- Read-data multiplexing
+- Acknowledge routing
+- RAM as a peripheral
+- GPIO as a peripheral
+- UART as a peripheral
+- CPU-to-peripheral communication
+- Hardware/software interfaces
+
 ---
 
 # Reflection
+
+This project was the first point where the individual components from the previous projects started to form a real SoC architecture.
+
+Instead of treating RAM, GPIO and UART as completely separate systems, they are now accessed through the same Wishbone bus.
+
+The most important concept I learned was the address decoder.
+
+The CPU-like Master does not need to know how each peripheral works. It only needs to access the correct address.
+
+For example:
+
+0x0010 → RAM
+0x1000 → GPIO
+0x2000 → UART
+
+The address decoder determines which peripheral should receive the transaction.
+
+This makes the system modular and makes it possible to add more peripherals later.
 
 ---
 
 # Problems
 
+One of the main challenges was making sure that only the correct peripheral responds to a transaction.
+
+If multiple peripherals respond to the same address, the system could produce incorrect read data or multiple acknowledgements.
+
+Another challenge was integrating the existing UART into the new architecture without rebuilding it.
+
+The UART already contains its own transmission logic, so the new MMIO system only needs to provide the correct data and start the transmission when the UART address is accessed.
+
+Understanding the difference between the bus interface and the actual peripheral logic was therefore important.
+
 ---
 
 # What I Would Improve
+
+The current system is intentionally simple.
+
+Possible improvements include:
+
+- More sophisticated address decoding
+- More registers per peripheral
+- Timer peripheral
+- Interrupt support
+- Multiple bus masters
+- More realistic error handling
+- Larger address spaces
+
+These features can be added as the SoC becomes more advanced.
 
 ---
 
@@ -849,3 +909,38 @@ This is the basic foundation needed before introducing interrupts and eventually
 ---
 
 # Next Step
+
+The next project is:
+
+## Interrupt Controller
+
+The next step is to understand how peripherals can notify the CPU that something has happened.
+
+Without interrupts, the CPU may need to repeatedly check peripherals:
+
+CPU
+ │
+ ├── Is UART ready?
+ │
+ ├── Is GPIO ready?
+ │
+ ├── Is Timer finished?
+ │
+ ├── Is UART ready?
+ │
+ └── ...
+
+This is called polling.
+
+With interrupts, a peripheral can instead notify the CPU:
+
+UART
+ │
+ │ Interrupt
+ ▼
+Interrupt Controller
+ │
+ ▼
+CPU
+
+This will be the next step toward understanding how a real SoC handles hardware events.
