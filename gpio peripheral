@@ -512,6 +512,8 @@ until another write occurs or the system is reset.
 
 # Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/04-soc-architecture/Gpio%20simulation.png
+
 ---
 
 # Concepts Learned
@@ -595,13 +597,57 @@ This is the connection between the digital logic being simulated now and the phy
 
 # Reflection
 
+This project introduced GPIO as a simple hardware peripheral.
+
+The most important concept was understanding that a GPIO peripheral can be controlled through a register.
+
+From the CPU's perspective, the GPIO can eventually look like a memory location.
+
+For example:
+
+Write 0x01 to 0x1000
+
+can cause a physical output to become "1".
+
+This helped me understand how software can eventually interact with physical hardware through an SoC.
+
+I also learned why registers are important in peripheral design. The register stores the value written by the CPU and keeps that value until another write or reset occurs.
+
 ---
 
 # Problems
 
+One challenge was understanding the difference between a normal memory location and a peripheral register.
+
+Both can be accessed using an address, but writing to a peripheral register can cause hardware behavior instead of simply storing data.
+
+Another challenge was making sure that the GPIO output only changes when a valid write occurs.
+
+The simulation and waveform helped verify that the register behaves synchronously with the clock.
+
 ---
 
 # What I Would Improve
+
+The current GPIO implementation only focuses on outputs.
+
+In the future, I would like to add:
+
+- GPIO inputs
+- Input registers
+- Output registers
+- Direction registers
+- Multiple GPIO banks
+- Interrupt support
+- FPGA pin connections
+
+A more complete GPIO peripheral could use registers such as:
+
+0x00 → GPIO_DATA
+0x04 → GPIO_DIRECTION
+0x08 → GPIO_INPUT
+
+This would allow individual GPIO pins to be configured as inputs or outputs.
 
 ---
 
@@ -615,3 +661,26 @@ This is the connection between the digital logic being simulated now and the phy
 ---
 
 # Next Step
+
+After the standalone GPIO peripheral is complete, it will be integrated with the existing Wishbone bus.
+
+The resulting architecture will be:
+
+                         CPU
+                          │
+                          ▼
+                   Wishbone Bus
+                          │
+                  Address Decoder
+                          │
+          ┌───────────────┼───────────────┐
+          ▼               ▼               ▼
+         RAM             GPIO            UART
+      0x0000            0x1000          0x2000
+                          │
+                          ▼
+                       GPIO[7:0]
+
+The goal is to make the GPIO accessible through a memory address in the same way that RAM and the existing UART will eventually be accessed.
+
+This will complete the basic foundation for Memory-Mapped I/O.
