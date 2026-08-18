@@ -1,1 +1,617 @@
+# GPIO Peripheral
 
+## Goal
+
+Build a simple GPIO peripheral in Verilog and understand how a CPU can control hardware through registers.
+
+This project is the first peripheral I am adding to my SoC architecture.
+
+I have already implemented a UART in the previous "uart-from-scratch" project. The UART will later be reused as a peripheral in the Memory-Mapped I/O system.
+
+For this project, I will build a GPIO peripheral from scratch.
+
+The goal is to understand how a hardware peripheral can:
+
+- Store a value in a register
+- Output that value to hardware
+- Be controlled through a bus interface
+- Eventually be assigned a memory address
+
+---
+
+# What is GPIO?
+
+GPIO stands for:
+
+General Purpose Input/Output
+
+GPIO pins allow a processor or FPGA to interact with external hardware.
+
+A GPIO pin can generally be configured as:
+
+- Input
+- Output
+
+For this project, the focus is initially on GPIO outputs.
+
+A simplified system looks like:
+
+
+        CPU
+         │
+         │ Write value
+         ▼
+       GPIO
+         │
+         ▼
+      Output
+
+
+For example:
+
+
+CPU writes:
+
+1
+
+↓
+
+GPIO output becomes:
+
+1
+
+
+This could eventually be connected to an LED on an FPGA board.
+
+---
+
+# Why GPIO?
+
+GPIO is one of the simplest useful peripherals.
+
+It provides a good example of how software can control physical hardware.
+
+Eventually, the system will work approximately like:
+
+
+Linux
+  │
+  ▼
+CPU
+  │
+  ▼
+Wishbone Bus
+  │
+  ▼
+GPIO Register
+  │
+  ▼
+FPGA Pin
+  │
+  ▼
+LED
+
+
+For now, everything is simulated.
+
+---
+
+# Basic GPIO Architecture
+
+The GPIO peripheral consists of a register and output signals.
+
+
+                 GPIO Peripheral
+              ┌──────────────────┐
+              │                  │
+Bus Data ────►│  GPIO Register   │
+              │                  │
+              └────────┬─────────┘
+                       │
+                       ▼
+                  GPIO Output
+
+
+The register stores the current GPIO output value.
+
+For example:
+
+
+Register = 00000001
+
+
+means:
+
+
+GPIO[0] = 1
+GPIO[7:1] = 0
+
+
+---
+
+# GPIO Width
+
+This project uses an 8-bit GPIO peripheral.
+
+Therefore:
+
+
+GPIO[7:0]
+
+
+contains eight GPIO outputs.
+
+For example:
+
+
+GPIO = 8'b00000001
+
+
+means:
+
+
+GPIO[0] = 1
+GPIO[1] = 0
+GPIO[2] = 0
+GPIO[3] = 0
+GPIO[4] = 0
+GPIO[5] = 0
+GPIO[6] = 0
+GPIO[7] = 0
+
+
+Another example:
+
+
+GPIO = 8'b10101010
+
+
+produces:
+
+
+GPIO[7] = 1
+GPIO[6] = 0
+GPIO[5] = 1
+GPIO[4] = 0
+GPIO[3] = 1
+GPIO[2] = 0
+GPIO[1] = 1
+GPIO[0] = 0
+
+
+---
+
+# GPIO Output Register
+
+The GPIO peripheral contains an output register.
+
+Conceptually:
+
+
+                 Write Data
+                     │
+                     ▼
+              ┌─────────────┐
+              │ GPIO Output │
+              │   Register  │
+              └──────┬──────┘
+                     │
+                     ▼
+                 GPIO[7:0]
+
+
+When a write occurs, the register stores the new value.
+
+For example:
+
+
+Write Data = 8'b11001100
+
+
+results in:
+
+
+GPIO Register = 8'b11001100
+
+
+and:
+
+
+GPIO = 8'b11001100
+
+
+---
+
+# Clock
+
+The GPIO register is synchronous.
+
+The value is updated on the active clock edge.
+
+Conceptually:
+
+
+Clock
+  │
+  ▼
+┌────────────────────┐
+│ GPIO Register      │
+│                    │
+│ Data → Register    │
+└────────────────────┘
+
+
+The GPIO output therefore changes synchronously with the clock.
+
+---
+
+# Reset
+
+The GPIO peripheral has a reset signal.
+
+After reset, the GPIO outputs should be:
+
+
+GPIO = 8'b00000000
+
+
+This ensures that the outputs start in a known state.
+
+For example:
+
+
+Reset = 1
+   ↓
+GPIO = 00000000
+
+
+After reset is released, the GPIO can be written normally.
+
+---
+
+# GPIO Write Operation
+
+A write operation changes the GPIO output.
+
+For example:
+
+
+Write Data = 8'b00001111
+Write = 1
+
+
+After the active clock edge:
+
+
+GPIO = 8'b00001111
+
+
+The transaction can be visualized as:
+
+
+        CPU / Bus
+            │
+            │ Write Data
+            ▼
+      ┌─────────────┐
+      │ GPIO        │
+      │ Register    │
+      └──────┬──────┘
+             │
+             ▼
+          GPIO[7:0]
+
+
+---
+
+# GPIO Read Operation
+
+The GPIO register should also be readable.
+
+For example:
+
+
+GPIO Register = 8'b10101010
+
+
+A read operation returns:
+
+
+Read Data = 8'b10101010
+
+
+The data path becomes:
+
+
+GPIO Register
+      │
+      ▼
+ Read Data
+      │
+      ▼
+   CPU / Bus
+
+
+This will become important when the GPIO is connected to the Wishbone bus.
+
+---
+
+# Register Map
+
+For this simple GPIO peripheral, only one register is required.
+
+| Address Offset | Register   | Description       |
+|----------------|------------|-------------------|
+| "0x00"         | "GPIO_OUT" | GPIO output value |
+
+The register is 8 bits wide.
+
+
+GPIO_OUT[7:0]
+
+
+---
+
+# Example Register Access
+
+Suppose GPIO is eventually mapped to:
+
+
+0x1000
+
+
+Then:
+
+
+0x1000 → GPIO_OUT
+
+
+A CPU write such as:
+
+
+Address = 0x1000
+Data    = 0x55
+Write   = 1
+
+
+would result in:
+
+
+GPIO = 0x55
+
+
+In binary:
+
+
+0x55 = 01010101
+
+
+Therefore:
+
+
+GPIO[7:0] = 01010101
+
+
+---
+
+# GPIO Inputs
+
+GPIO can also be used for inputs.
+
+For example:
+
+
+Button
+  │
+  ▼
+GPIO Input
+  │
+  ▼
+CPU
+
+
+However, input functionality is not the main goal of this project.
+
+The first version focuses on outputs because this provides the simplest way to understand how a CPU can control hardware.
+
+GPIO input functionality can be added later.
+
+---
+
+# Interface
+
+The GPIO module should provide an interface similar to:
+
+
+                GPIO
+        ┌─────────────────┐
+        │                 │
+clk ───►│                 │
+reset ─►│                 │
+        │                 │
+write ─►│                 │
+        │                 │
+data ──►│                 │
+        │                 │
+        │                 │
+        │             ────┼──► gpio_out[7:0]
+        └─────────────────┘
+
+---
+
+# Internal Operation
+
+The GPIO register can conceptually work like:
+
+
+if reset:
+  
+GPIO = 0
+
+
+else if write_enable:
+    
+GPIO = write_data
+
+
+This means:
+
+
+Reset
+  ↓
+GPIO = 0
+
+
+and:
+
+Write Enable = 1
+  ↓
+GPIO = Write Data
+
+
+If no write occurs, the GPIO retains its previous value.
+
+---
+
+# Example
+
+Initially:
+
+
+GPIO = 00000000
+
+
+Write:
+
+
+write_data   = 10101010
+write_enable = 1
+
+
+After the clock edge:
+
+
+GPIO = 10101010
+
+
+Then:
+
+
+write_enable = 0
+
+
+The GPIO remains:
+
+
+GPIO = 10101010
+
+
+until another write occurs or the system is reset.
+
+---
+
+# Simulation
+
+---
+
+# Concepts Learned
+
+---
+
+# Why This Matters for the SoC
+
+A complete SoC is essentially a collection of hardware components connected together.
+
+For example:
+
+
+                         CPU
+                          │
+                          ▼
+                   ┌───────────┐
+                   │   Bus     │
+                   └─────┬─────┘
+                         │
+          ┌──────────────┼──────────────┐
+          ▼              ▼              ▼
+         RAM            GPIO           UART
+          │              │              │
+          │              ▼              ▼
+          │             Pins          Serial
+          │
+          ▼
+        Memory
+
+
+The CPU can control these components through registers.
+
+This is a fundamental concept in SoC design.
+
+---
+
+# Future FPGA Application
+
+When this project is eventually moved onto an FPGA board, the GPIO output can be connected to actual FPGA pins.
+
+For example:
+
+
+CPU
+ │
+ ▼
+Wishbone
+ │
+ ▼
+GPIO Register
+ │
+ ▼
+FPGA Pin
+ │
+ ▼
+LED
+
+
+Then a program running on the CPU could potentially control the LED by writing to the GPIO register.
+
+For example:
+
+
+GPIO = 1
+
+
+could turn an LED on.
+
+And:
+
+
+GPIO = 0
+
+
+could turn it off.
+
+This is the connection between the digital logic being simulated now and the physical FPGA hardware that will be used later.
+
+---
+
+# Reflection
+
+---
+
+# Problems
+
+---
+
+# What I Would Improve
+
+---
+
+# References
+
+- Wishbone B4 Specification
+- Project F – FPGA Tutorials
+- Nandland – Learn Verilog
+- HDLBits
+
+---
+
+# Next Step
