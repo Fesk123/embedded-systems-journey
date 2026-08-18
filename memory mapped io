@@ -1,1 +1,851 @@
+# Memory-Mapped I/O
 
+## Goal
+
+Understand how a CPU can communicate with different hardware components using memory addresses.
+
+In this project, I will combine several components from previous projects:
+
+- Wishbone bus
+- RAM
+- GPIO
+- UART
+
+The goal is to create a simple Memory-Mapped I/O system where a CPU-like Master can access different peripherals by writing to and reading from specific addresses.
+
+The important concept is that the CPU does not need a completely different interface for every peripheral.
+
+Instead:
+
+CPU
+ ↓
+Wishbone Bus
+ ↓
+Address Decoder
+ ↓
+Peripheral
+
+The address determines which peripheral receives the transaction.
+
+---
+
+# What is Memory-Mapped I/O?
+
+Memory-Mapped I/O (MMIO) is a method where hardware peripherals are assigned specific addresses in the CPU's address space.
+
+From the CPU's perspective, accessing a peripheral can look similar to accessing memory.
+
+For example:
+
+0x0000 - 0x00FF → RAM
+0x01 - 0x0010 → GPIO
+0x41 - 0x2000 → UART
+
+Therefore:
+
+Write 0x42 to 0x0010
+        ↓
+       RAM
+
+Write 0x01 to 0x1000
+        ↓
+       GPIO
+
+Write 0x41 to 0x2000
+        ↓
+       UART
+
+The CPU performs the same basic type of bus transaction in all three cases.
+
+The address decoder determines where the transaction should go.
+
+---
+
+# Why Memory-Mapped I/O?
+
+A CPU needs to communicate with many different hardware components.
+
+An SoC can contain:
+
+- RAM
+- ROM
+- GPIO
+- UART
+- SPI
+- Timers
+- Interrupt controllers
+- Display controllers
+- Network controllers
+- Storage controllers
+
+Creating a completely different CPU interface for every peripheral would make the system complicated.
+
+Memory-Mapped I/O provides a common way of accessing them.
+
+A simplified system looks like:
+
+                         CPU
+                          │
+                          ▼
+                   Wishbone Bus
+                          │
+                          ▼
+                   Address Decoder
+                          │
+          ┌───────────────┼───────────────┐
+          ▼               ▼               ▼
+         RAM             GPIO            UART
+
+---
+
+# Previous Projects Used
+
+This project reuses components that were already created earlier.
+
+## Wishbone Bus
+
+The Wishbone bus was implemented in the previous SoC architecture project.
+
+It provides the communication interface between the Master and peripherals.
+
+## RAM
+
+The RAM component was created during Step 3.
+
+It will be reused here rather than rebuilt.
+
+## GPIO
+
+The GPIO peripheral was created immediately before this project.
+
+It provides an 8-bit output register.
+
+## UART
+
+The UART is reused from the previous "uart-from-scratch" project.
+
+The UART itself does not need to be rebuilt.
+
+Instead, a small MMIO interface will connect it to the Wishbone system.
+
+---
+
+# System Architecture
+
+The complete system will look like:
+
+                         CPU / Master
+                              │
+                              ▼
+                       Wishbone Bus
+                              │
+                              ▼
+                       Address Decoder
+                              │
+              ┌───────────────┼───────────────┐
+              │               │               │
+              ▼               ▼               ▼
+             RAM             GPIO            UART
+          0x0000            0x1000          0x2000
+
+The CPU-like Master generates transactions.
+
+The Wishbone bus transports the transaction.
+
+The address decoder determines which peripheral should receive it.
+
+The selected peripheral performs the operation and returns an acknowledgement and, when necessary, read data.
+
+---
+
+# Address Map
+
+The system uses the following address map:
+
+| Address           | Peripheral | Description            |
+|-------------------|------------|------------------------|
+| "0x0000 - 0x00FF" | RAM        | General-purpose memory |
+| "0x1000"          | GPIO       | GPIO output register   |
+| "0x2000"          | UART       | UART transmit register |
+| "0x3000"          | Reserved   | Future timer           |
+
+The timer address is reserved for a future project.
+
+It should not be implemented yet.
+
+---
+
+# Address Decoder
+
+The address decoder is one of the most important components in this project.
+
+Its job is to examine the address from the Master and determine which peripheral should be selected.
+
+Conceptually:
+
+                    Address
+                       │
+                       ▼
+                ┌─────────────┐
+                │   Address   │
+                │   Decoder   │
+                └──────┬──────┘
+                       │
+         ┌─────────────┼─────────────┐
+         ▼             ▼             ▼
+        RAM           GPIO          UART
+      0x0000         0x1000        0x2000
+
+
+For example:
+
+
+ADR = 0x0010
+
+
+selects:
+
+
+RAM
+
+
+while:
+
+
+ADR = 0x1000
+
+
+selects:
+
+
+GPIO
+
+
+and:
+
+
+ADR = 0x2000
+
+
+selects:
+
+
+UART
+
+
+---
+
+# RAM Access
+
+RAM occupies:
+
+
+0x0000 - 0x00FF
+
+
+A write to an address inside this range is sent to RAM.
+
+For example:
+
+
+Address = 0x0010
+Data    = 0x42
+Write   = 1
+
+
+The expected result is:
+
+
+RAM[0x0010] = 0x42
+
+
+A subsequent read should return:
+
+
+0x42
+
+
+The architecture is:
+
+
+CPU
+ │
+ │ 0x0010
+ ▼
+Wishbone
+ │
+ ▼
+Address Decoder
+ │
+ └──────► RAM
+
+
+---
+
+# GPIO Access
+
+GPIO is mapped to:
+
+
+0x1000
+
+
+A write to "0x1000" updates the GPIO output register.
+
+For example:
+
+
+Address = 0x1000
+Data    = 0xAA
+Write   = 1
+
+
+results in:
+
+
+GPIO = 0xAA
+
+
+Binary:
+
+
+10101010
+
+
+The architecture is:
+
+
+CPU
+ │
+ │ 0x1000
+ │ 0xAA
+ ▼
+Wishbone
+ │
+ ▼
+Address Decoder
+ │
+ └──────► GPIO
+             │
+             ▼
+          GPIO[7:0]
+
+
+---
+
+# UART Access
+
+The existing UART from the "uart-from-scratch" project is mapped to:
+
+
+0x2000
+
+
+A write to this address represents a UART transmit operation.
+
+For example:
+
+
+Address = 0x2000
+Data = 0x41
+Write = 1
+
+
+"0x41" represents:
+
+
+A
+
+
+The transaction should therefore pass the value to the existing UART transmitter.
+
+The UART itself is not rebuilt.
+
+The architecture becomes:
+
+
+CPU
+ │
+ │ 0x2000
+ │ 0x41
+ ▼
+Wishbone
+ │
+ ▼
+Address Decoder
+ │
+ └──────► UART MMIO Interface
+               │
+               ▼
+        Existing UART TX
+
+
+---
+
+# UART Integration
+
+The existing UART contains the logic required for serial transmission.
+
+The new MMIO system only needs to determine when the CPU is writing to the UART address.
+
+Conceptually:
+
+
+if address == 0x2000
+and write == 1
+then
+    send data to UART
+
+
+The existing UART handles the actual:
+
+- Baud generation
+- TX state machine
+- Serial output
+
+This keeps the MMIO project focused on SoC architecture rather than rebuilding the UART.
+
+---
+
+# Wishbone Signals
+
+The system uses the Wishbone signals created in the previous project.
+
+The important signals are:
+
+| Signal  | Purpose            |
+|---------|--------------------|
+| "CLK_I" | System clock       |
+| "RST_I" | Reset              |
+| "ADR_I" | Address            |
+| "DAT_I" | Write data         |
+| "DAT_O" | Read data          |
+| "WE_I"  | Read/write control |
+| "STB_I" | Transfer request   |
+| "CYC_I" | Active bus cycle   |
+| "ACK_O" | Transfer completed |
+
+The address decoder uses "ADR_I" to determine which peripheral should receive the transaction.
+
+---
+
+# Write Transaction
+
+A write transaction contains:
+
+
+Address
+Data
+Write Enable
+Cycle
+Strobe
+
+
+For example:
+
+
+Address = 0x1000
+Data = 0x01
+WE = 1
+CYC = 1
+STB = 1
+
+
+The address decoder determines:
+
+
+0x1000 → GPIO
+
+
+The GPIO receives the write.
+
+The GPIO then responds with:
+
+
+ACK = 1
+
+
+The complete transaction is:
+
+
+CPU
+ │
+ │ Address = 0x1000
+ │ Data = 0x01
+ │ WE = 1
+ ▼
+Wishbone
+ │
+ ▼
+Address Decoder
+ │
+ └──────► GPIO
+             │
+             │ ACK
+             ▼
+          Wishbone
+             │
+             ▼
+            CPU
+
+
+---
+
+# Read Transaction
+
+A read transaction works in the opposite direction.
+
+For example:
+
+
+Address = 0x1000
+WE      = 0
+CYC     = 1
+STB     = 1
+
+
+The decoder selects GPIO.
+
+The GPIO returns its current register value through:
+
+
+DAT_O
+
+
+For example:
+
+
+GPIO = 0x55
+
+
+results in:
+
+
+DAT_O = 0x55
+
+
+The transaction is:
+
+
+CPU
+ │
+ │ Read 0x1000
+ ▼
+Wishbone
+ │
+ ▼
+Address Decoder
+ │
+ └──────► GPIO
+             │
+             │ 0x55
+             ▼
+          Wishbone
+             │
+             ▼
+            CPU
+
+
+---
+
+# Peripheral Select Signals
+
+The address decoder can generate internal select signals.
+
+For example:
+
+
+ram_select
+gpio_select
+uart_select
+
+
+Conceptually:
+
+
+Address = 0x0010
+    ↓
+ram_select = 1
+gpio_select = 0
+uart_select = 0
+
+
+For:
+
+
+Address = 0x1000
+
+
+the result becomes:
+
+
+ram_select = 0
+gpio_select = 1
+uart_select = 0
+
+
+For:
+
+
+Address = 0x2000
+
+
+the result becomes:
+
+
+ram_select = 0
+gpio_select = 0
+uart_select = 1
+
+
+Only one peripheral should normally be selected for a valid address.
+
+---
+
+# Read Data Multiplexing
+
+When the CPU performs a read, the system must determine which peripheral's data should be returned.
+
+Conceptually:
+
+
+RAM data
+   │
+   ├─────────┐
+   │         │
+GPIO data    │
+   │         ▼
+   │     Data Mux ───► DAT_O
+   │         ▲
+UART data   │
+   │         │
+   └─────────┘
+
+
+For example:
+
+
+RAM selected
+    ↓
+DAT_O = RAM data
+
+
+or:
+
+
+GPIO selected
+    ↓
+DAT_O = GPIO data
+
+
+---
+
+# ACK Multiplexing
+
+The same principle applies to the Wishbone acknowledgement.
+
+Only the selected peripheral should provide the response.
+
+Conceptually:
+
+
+RAM ACK
+   │
+   ├─────────┐
+   │         │
+GPIO ACK    │
+   │         ▼
+   │      ACK Mux ───► Master
+   │
+UART ACK
+   │
+   └─────────┘
+
+
+This ensures that the Master receives exactly one response for a valid transaction.
+
+---
+
+# Simulation
+
+---
+
+# Architecture Diagram
+
+The final architecture of this project is:
+
+
+                         CPU / Master
+                              │
+                              ▼
+                       Wishbone Bus
+                              │
+                              ▼
+                       Address Decoder
+                              │
+              ┌───────────────┼───────────────┐
+              │               │               │
+              ▼               ▼               ▼
+             RAM             GPIO            UART
+          0x0000            0x1000          0x2000
+                              │               │
+                              ▼               ▼
+                         GPIO Output       UART TX
+
+
+---
+
+# Important Design Principle
+
+The peripherals should not need to know the entire SoC architecture.
+
+For example, GPIO should not need to know:
+
+
+Where RAM is located
+Where UART is located
+How the CPU works
+
+
+GPIO only needs to respond when it is selected.
+
+The address decoder handles the system-level routing.
+
+This creates a modular architecture:
+
+
+Address Decoder
+      │
+      ├──► RAM
+      │
+      ├──► GPIO
+      │
+      └──► UART
+
+
+This makes it easier to add more peripherals later.
+
+---
+
+# Why This Matters for the SoC
+
+The final Linux computer will need a similar structure.
+
+Eventually the architecture will look more like:
+
+
+                         RISC-V CPU
+                              │
+                              ▼
+                            Bus
+                              │
+                     ┌────────┴────────┐
+                     │                 │
+                   Memory          Peripherals
+                     │                 │
+              ┌──────┴──────┐     ┌────┴────┐
+              ▼             ▼     ▼         ▼
+             ROM           RAM   UART      GPIO
+                                  │
+                                  ▼
+                                Timer
+
+
+Linux will eventually interact with hardware peripherals through this type of architecture.
+
+The exact bus and peripheral arrangement may change when the final SoC is implemented, but the fundamental concept remains the same.
+
+---
+
+# Connection to Linux
+
+Memory-Mapped I/O is particularly important for the Linux project.
+
+Linux needs to communicate with hardware.
+
+For example:
+
+
+Linux program
+     ↓
+Linux driver
+     ↓
+CPU instruction
+     ↓
+Memory-mapped address
+     ↓
+SoC bus
+     ↓
+Peripheral
+
+
+A program may eventually cause the CPU to access a hardware register.
+
+For example:
+
+
+Write 1
+   ↓
+GPIO register
+   ↓
+FPGA pin
+   ↓
+LED
+
+
+The software sees an address.
+
+The hardware interprets that address as a peripheral register.
+
+This is one of the key connections between software and hardware in an SoC.
+
+---
+
+# Concepts Learned
+
+---
+
+# Reflection
+
+---
+
+# Problems
+
+---
+
+# What I Would Improve
+
+---
+
+# Current SoC Progress
+
+At this point, the architecture contains:
+
+
+                 CPU-like Master
+                        │
+                        ▼
+                  Wishbone Bus
+                        │
+                        ▼
+                 Address Decoder
+                        │
+             ┌──────────┼──────────┐
+             ▼          ▼          ▼
+            RAM        GPIO       UART
+
+
+This is the basic foundation needed before introducing interrupts and eventually a real CPU.
+
+---
+
+# References
+
+- Wishbone B4 Specification
+- Project F – FPGA Tutorials
+- Nandland – Learn Verilog
+- HDLBits
+
+---
+
+# Next Step
