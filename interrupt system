@@ -1,1 +1,839 @@
+# Interrupt Controller
 
+## Goal
+
+The goal of this project is to understand how hardware peripherals can notify a CPU that an event has occurred.
+
+In the previous project, "memory-mapped-io", I connected several peripherals to a common Wishbone bus:
+
+    CPU / Master
+          │
+          ▼
+     Wishbone Bus
+          │
+    Address Decoder
+          │
+    ┌─────┼─────┐
+    ▼     ▼     ▼
+   RAM   GPIO  UART
+
+The next important concept is interrupts.
+
+Without interrupts, a CPU may need to repeatedly check peripherals to determine whether something has happened.
+
+With interrupts, a peripheral can instead notify the CPU when it needs attention.
+
+The goal of this project is to build a simple interrupt controller that can receive interrupt signals from several peripherals and combine them into a single interrupt signal for the CPU.
+
+The architecture will eventually look like:
+
+    UART ──────┐
+               │
+    GPIO ──────┼──► Interrupt Controller ───► CPU
+               │
+    Timer ─────┘
+
+The project will initially be simulated without a real CPU.
+
+---
+
+## What is an Interrupt?
+
+An interrupt is a signal that tells the CPU that some hardware event requires attention.
+
+For example, a UART may receive a byte.
+
+Instead of the CPU constantly checking:
+
+    Is UART ready?
+    Is UART ready?
+    Is UART ready?
+    Is UART ready?
+
+the UART can generate an interrupt:
+
+    UART
+      │
+      │ Interrupt
+      ▼
+     CPU
+
+The CPU can then temporarily stop its normal execution and handle the event.
+
+---
+
+## Polling vs Interrupts
+
+# Polling
+
+With polling, the CPU repeatedly checks a peripheral.
+
+For example:
+
+    CPU
+     │
+     ├── Check UART
+     │
+     ├── Check GPIO
+     │
+     ├── Check Timer
+     │
+     ├── Check UART
+     │
+     ├── Check GPIO
+     │
+     └── Check Timer
+
+This consumes CPU time even when nothing has happened.
+
+# Interrupts
+
+With interrupts, the CPU can continue executing normal code until a peripheral needs attention.
+
+For example:
+
+    CPU
+     │
+     │ Normal execution
+     │
+     ▼
+    Interrupt
+     │
+     ▼
+    Interrupt Handler
+
+The peripheral generates the interrupt when necessary.
+
+This is much more efficient for many types of hardware events.
+
+---
+
+## Basic Interrupt Architecture
+
+The simplest interrupt system is:
+
+    UART ──────┐
+               │
+    GPIO ──────┼──► Interrupt Controller ───► CPU
+               │
+    Timer ─────┘
+
+Each peripheral has its own interrupt signal.
+
+The interrupt controller combines them into a single signal for the CPU.
+
+For example:
+
+    UART interrupt  = 0
+    GPIO interrupt  = 1
+    Timer interrupt = 0
+
+The interrupt controller generates:
+
+    CPU interrupt = 1
+
+because at least one peripheral is requesting attention.
+
+---
+
+## Interrupt Request Lines
+
+Each peripheral has an interrupt request line.
+
+For this project, the controller will support four interrupt sources:
+
+    IRQ[3:0]
+
+The sources are:
+
+    IRQ[0] → UART
+    IRQ[1] → GPIO
+    IRQ[2] → Timer
+    IRQ[3] → Reserved
+
+The architecture is:
+
+    ┌─────────────────────────────────┐
+    │       Interrupt Controller      │
+    │                                 │
+    │ IRQ[0] ◄──── UART               │
+    │ IRQ[1] ◄──── GPIO               │
+    │ IRQ[2] ◄──── Timer              │
+    │ IRQ[3] ◄──── Reserved           │
+    │                                 │
+    │                 IRQ_OUT ────────┼──► CPU
+    └─────────────────────────────────┘
+
+The Timer does not need to be implemented yet.
+
+Its interrupt line can remain inactive.
+
+---
+
+## Interrupt Output
+
+The simplest implementation uses an OR operation.
+
+Conceptually:
+
+    IRQ_OUT = IRQ[0] | IRQ[1] | IRQ[2] | IRQ[3]
+
+Therefore, if any interrupt source is active:
+
+    IRQ_OUT = 1
+
+For example:
+
+    IRQ = 0000
+    IRQ_OUT = 0
+
+while:
+
+    IRQ = 0001
+    IRQ_OUT = 1
+
+and:
+
+    IRQ = 0100
+    IRQ_OUT = 1
+
+---
+
+## Why an Interrupt Controller?
+
+A CPU could theoretically have multiple interrupt inputs.
+
+However, an interrupt controller provides a centralized way to manage interrupt sources.
+
+A real SoC may contain many peripherals:
+
+- UART
+- GPIO
+- SPI
+- I2C
+- Timer
+- Ethernet
+- USB
+- Storage
+- Display
+
+Having every peripheral directly connected to the CPU would become complicated.
+
+Instead:
+
+    Peripherals
+         │
+         ▼
+    Interrupt Controller
+         │
+         ▼
+        CPU
+
+The controller can later provide features such as:
+
+- Interrupt masking
+- Interrupt priorities
+- Interrupt status
+- Interrupt acknowledgement
+- Interrupt pending state
+
+This project will introduce these concepts gradually.
+
+---
+
+## Interrupt Types
+
+There are two important concepts to understand.
+
+# Level-triggered Interrupt
+
+The interrupt remains active while the condition exists.
+
+For example:
+
+    UART has data
+         ↓
+       IRQ = 1
+
+The interrupt stays active until the condition is handled or cleared.
+
+Conceptually:
+
+    Condition = 1
+         ↓
+       IRQ = 1
+
+# Edge-triggered Interrupt
+
+The interrupt is generated when a signal changes.
+
+For example:
+
+    0 → 1
+
+can generate an interrupt event.
+
+Conceptually:
+
+    Signal:
+
+    ───────┐
+           │
+           └────────
+
+           ↑
+         Edge
+
+For this project, the first implementation will focus on level-triggered interrupts because they are easier to understand and integrate.
+
+---
+
+## Interrupt Pending
+
+An interrupt controller can keep track of which interrupt sources are currently requesting attention.
+
+For example:
+
+    IRQ[3:0] = 0101
+
+means:
+
+    IRQ[0] = 1 → UART interrupt
+    IRQ[1] = 0
+    IRQ[2] = 1 → Timer interrupt
+    IRQ[3] = 0
+
+The controller can store this information in a pending register.
+
+Conceptually:
+
+    Interrupt sources
+           │
+           ▼
+    ┌──────────────┐
+    │   Pending    │
+    │   Register   │
+    └──────┬───────┘
+           │
+           ▼
+       CPU Interrupt
+
+---
+
+## Interrupt Masking
+
+Not every interrupt needs to be enabled at all times.
+
+An interrupt mask register determines which interrupts are allowed to reach the CPU.
+
+For example:
+
+    IRQ:
+    0101
+
+    MASK:
+    0001
+
+Only the enabled interrupt sources are allowed through.
+
+Conceptually:
+
+    IRQ_OUT = (IRQ & MASK)
+
+For example:
+
+    IRQ  = 0101
+    MASK = 0001
+
+    IRQ & MASK = 0001
+
+    IRQ_OUT = 1
+
+If:
+
+    MASK = 0000
+
+then:
+
+    IRQ_OUT = 0
+
+even if a peripheral has an active interrupt.
+
+---
+
+## Interrupt Registers
+
+The interrupt controller will use a small set of memory-mapped registers.
+
+The proposed register map is:
+
+| Address Offset | Register      | Description                        |
+|----------------|---------------|------------------------------------|
+| "0x00"         | "IRQ_PENDING" | Current interrupt requests         |
+| "0x04"         | "IRQ_MASK"    | Enables/disables interrupt sources |
+| "0x08"         | "IRQ_STATUS"  | Enabled interrupt status           |
+| "0x0C"         | "IRQ_CLEAR"   | Clears interrupt state             |
+
+These registers will eventually be accessed through the same MMIO system created in the previous project.
+
+---
+
+## IRQ_PENDING
+
+The "IRQ_PENDING" register shows which interrupt sources are currently active.
+
+For example:
+
+    IRQ_PENDING = 0101
+
+means:
+
+    UART  → active
+    GPIO  → inactive
+    Timer → active
+
+The CPU can read this register to determine which peripheral caused the interrupt.
+
+---
+
+## IRQ_MASK
+
+The "IRQ_MASK" register determines which interrupt sources are enabled.
+
+For example:
+
+    IRQ_MASK = 0011
+
+means:
+
+    IRQ[0] → enabled
+    IRQ[1] → enabled
+    IRQ[2] → disabled
+    IRQ[3] → disabled
+
+This allows software to ignore interrupts that are currently not needed.
+
+---
+
+## IRQ_STATUS
+
+The status register exposes the currently relevant interrupt state.
+
+For this simple implementation:
+
+    IRQ_STATUS = IRQ_PENDING & IRQ_MASK
+
+For example:
+
+    IRQ_PENDING = 0101
+    IRQ_MASK    = 0011
+
+results in:
+
+    IRQ_STATUS = 0001
+
+Only the enabled interrupt remains active.
+
+---
+
+## IRQ_CLEAR
+
+The clear register is used to acknowledge or clear interrupt state when using latched interrupt behavior.
+
+For example:
+
+    Write 0001 to IRQ_CLEAR
+
+can clear:
+
+    IRQ[0]
+
+This concept will become important later when connecting real peripherals to the interrupt controller.
+
+---
+
+## Basic Interrupt Flow
+
+A typical interrupt sequence is:
+
+    1. Peripheral generates interrupt
+           ↓
+    2. Interrupt Controller detects it
+           ↓
+    3. Interrupt Controller asserts IRQ_OUT
+           ↓
+    4. CPU detects interrupt
+           ↓
+    5. CPU checks interrupt status
+           ↓
+    6. CPU determines source
+           ↓
+    7. CPU handles the peripheral
+           ↓
+    8. Interrupt is cleared
+
+In diagram form:
+
+    Peripheral
+        │
+        │ IRQ
+        ▼
+    Interrupt Controller
+        │
+        │ IRQ_OUT
+        ▼
+       CPU
+        │
+        │ Read status
+        ▼
+    Interrupt Controller
+        │
+        │ Source
+        ▼
+    Peripheral
+
+---
+
+## Example: UART Interrupt
+
+Consider a UART receiving a byte.
+
+The sequence could be:
+
+    UART receives byte
+           ↓
+    UART IRQ = 1
+           ↓
+    Interrupt Controller
+           ↓
+    IRQ_PENDING[0] = 1
+           ↓
+    IRQ_OUT = 1
+           ↓
+    CPU receives interrupt
+
+The CPU can then read:
+
+    IRQ_PENDING
+
+and see:
+
+    0001
+
+This tells the CPU that the UART generated the interrupt.
+
+---
+
+## Example: Multiple Interrupts
+
+It is possible for multiple peripherals to request interrupts at the same time.
+
+For example:
+
+    UART  = 1
+    GPIO  = 1
+    Timer = 0
+
+Then:
+
+    IRQ = 0011
+
+The CPU receives:
+
+    IRQ_OUT = 1
+
+The CPU can read:
+
+    IRQ_PENDING = 0011
+
+and determine that both UART and GPIO require attention.
+
+This introduces the idea of interrupt priority, which will become important in more advanced interrupt controllers.
+
+---
+
+## Interrupt Priority
+
+If multiple interrupts occur simultaneously, the CPU may need to decide which one should be handled first.
+
+For example:
+
+    UART IRQ  = 1
+    GPIO IRQ  = 1
+    Timer IRQ = 1
+
+A simple priority scheme could be:
+
+    Timer > UART > GPIO
+
+However, a full priority system is not required for this project.
+
+The main goal is to understand that multiple interrupt sources can exist simultaneously and that a controller can manage them.
+
+---
+
+## Clock
+
+The interrupt controller is synchronous with the system clock.
+
+The clock is used for:
+
+- Register updates
+- Interrupt state
+- Clearing interrupts
+- Synchronizing the controller with the rest of the SoC
+
+The architecture is:
+
+    Clock
+      │
+      ▼
+    Interrupt Controller
+      │
+      ├── Pending Register
+      ├── Mask Register
+      └── Status Register
+
+---
+
+## Reset
+
+After reset, the interrupt controller should start in a known state.
+
+The recommended initial state is:
+
+    IRQ_PENDING = 0000
+    IRQ_MASK    = 0000
+    IRQ_STATUS  = 0000
+    IRQ_OUT     = 0
+
+This means that no interrupts are active and all interrupt sources are disabled.
+
+Software can later enable the required interrupt sources.
+
+---
+
+## Wishbone / MMIO Interface
+
+The interrupt controller will eventually be connected to the Memory-Mapped I/O system from the previous project.
+
+The architecture becomes:
+
+    CPU / Master
+         │
+         ▼
+    Wishbone Bus
+         │
+         ▼
+    Address Decoder
+         │
+    ┌────┼────┬──────────────┐
+    ▼    ▼    ▼              ▼
+   RAM  GPIO UART   Interrupt Controller
+
+A future address can be assigned to the interrupt controller.
+
+For example:
+
+    0x3000 – 0x30FF → Interrupt Controller
+
+This address range will be separate from the existing peripherals.
+
+---
+
+## Interrupt Controller Address Map
+
+The proposed memory map is:
+
+| Address  | Register      |
+|----------|---------------|
+| "0x3000" | "IRQ_PENDING" |
+| "0x3004" | "IRQ_MASK"    |
+| "0x3008" | "IRQ_STATUS"  |
+| "0x300C" | "IRQ_CLEAR"   |
+
+The exact bus width and address alignment may be adjusted when the controller is integrated with the existing Wishbone implementation.
+
+---
+
+## Testbench
+
+The testbench should act as a simple CPU-like Master.
+
+It should generate interrupts and verify that the controller reacts correctly.
+
+The testbench should test:
+
+1. Reset
+2. Single interrupt
+3. Multiple interrupts
+4. Interrupt masking
+5. Interrupt status
+6. Interrupt clearing
+7. Interrupt output
+8. MMIO register access
+
+---
+
+## Simulation
+
+---
+
+## Architecture Diagram
+
+The architecture of the project is:
+
+    CPU
+     ▲
+     │
+    IRQ_OUT
+     │
+     ┌─────────────────────┐
+     │ Interrupt Controller│
+     └──────────┬──────────┘
+                │
+       ┌────────┼────────┐
+       ▼        ▼        ▼
+     UART      GPIO     Timer
+    IRQ[0]    IRQ[1]    IRQ[2]
+
+---
+
+## Full SoC Architecture So Far
+
+After this project, the conceptual SoC becomes:
+
+                              CPU
+                               │
+                 ┌─────────────┴─────────────┐
+                 │                           │
+                 ▼                           ▼
+           Wishbone Bus                  Interrupt
+                 │                           ▲
+                 ▼                           │
+          Address Decoder                   │
+                 │                           │
+        ┌────────┼────────┐                  │
+        ▼        ▼        ▼                  │
+       RAM      GPIO     UART ───────────────┤
+                                             │
+                                     Interrupt Controller
+                                             ▲
+                                             │
+                                           Timer
+
+The Timer is shown as a future peripheral and does not need to be implemented yet.
+
+---
+
+## Important Design Principle
+
+The interrupt controller should be independent from the actual peripherals.
+
+It should not contain UART-specific or GPIO-specific logic.
+
+Instead, it should receive generic interrupt signals:
+
+    IRQ[0]
+    IRQ[1]
+    IRQ[2]
+    IRQ[3]
+
+The meaning of each interrupt source is defined by the SoC architecture.
+
+For example:
+
+    IRQ[0] → UART
+    IRQ[1] → GPIO
+    IRQ[2] → Timer
+    IRQ[3] → Reserved
+
+This makes the interrupt controller reusable.
+
+---
+
+## Why This Matters for the Final SoC
+
+The final Linux computer will need interrupts.
+
+Linux cannot efficiently operate a complex system by constantly polling every peripheral.
+
+Instead, hardware events can generate interrupts.
+
+For example:
+
+    UART receives data
+           ↓
+    UART interrupt
+           ↓
+    Interrupt Controller
+           ↓
+    RISC-V CPU
+           ↓
+    Interrupt handler
+           ↓
+    Linux driver
+
+This is a fundamental part of how operating systems communicate with hardware.
+
+---
+
+## Connection to RISC-V
+
+The eventual CPU will be RISC-V.
+
+A RISC-V system needs a mechanism for handling interrupts.
+
+The exact final interrupt architecture may be different from this simplified controller.
+
+A real RISC-V Linux system can use more advanced interrupt hardware such as a Platform-Level Interrupt Controller (PLIC) or other interrupt mechanisms depending on the system architecture.
+
+This project is not intended to implement a complete PLIC.
+
+Instead, it is a simplified model designed to understand the fundamental concepts:
+
+    Peripheral
+        ↓
+    Interrupt Request
+        ↓
+    Interrupt Controller
+        ↓
+    CPU
+        ↓
+    Interrupt Handler
+
+Understanding this simplified architecture will make the more advanced RISC-V interrupt architecture easier to understand later.
+
+---
+
+## Concepts Learned
+
+---
+
+## Reflection
+
+---
+
+## Problems
+
+---
+
+## What I Would Improve
+
+---
+
+## Current SoC Progress
+
+---
+
+## References
+
+- RISC-V Privileged Architecture Specification
+- Wishbone B4 Specification
+- Project F – FPGA Tutorials
+- Nandland – Learn Verilog
+- HDLBits
+
+---
+
+## Next Step
