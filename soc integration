@@ -1077,17 +1077,114 @@ This project is therefore the hardware foundation for the Linux stage.
 
 ## Concepts Learned
 
+- Hardware module integration
+- Top-level modules
+- Inter-module signals
+- Interrupt paths
+- Peripheral-to-controller communication
+- Timer interrupts
+- Interrupt masking
+- System-level simulation
+- Modular hardware design
+- SoC subsystem architecture
+
 ---
 
 ## Reflection
+
+This project was more difficult than I initially expected because the integration did not work completely as planned.
+
+The main goal was to connect the Timer to the Interrupt Controller and verify the complete interrupt path in simulation. The basic concept worked, and I was able to understand how the Timer should generate an interrupt and how the Interrupt Controller should receive it.
+
+However, the final system simulation did not behave correctly.
+
+I also encountered problems with the UART that had already been developed in an earlier project. When testing the larger system, the UART TX signal eventually became "XX" in the simulation instead of producing a valid "0" or "1" signal.
+
+This showed me that integrating several previously working modules can introduce problems that are not visible when each module is tested separately.
+
+The project therefore did not reach the completely working state I originally intended. However, it was still useful because it demonstrated an important part of hardware development: a module working correctly on its own does not necessarily mean that the complete system will work correctly after integration.
+
+I learned that debugging an SoC requires checking signals across several modules and determining where an unknown or incorrect value first appears.
+
+This project also made it clear that I need to become better at debugging larger simulations before moving on to more complex SoC integration.
 
 ---
 
 ## Problems
 
+The integration did not work completely as expected.
+
+The biggest problem occurred during the final simulation, where the UART "TX" signal became "XX".
+
+Instead of:
+
+    TX = 0
+
+or:
+
+    TX = 1
+
+the simulator showed:
+
+    TX = XX
+
+This means that the signal had an unknown value in the simulation.
+
+Because the UART was part of the larger system, this made it difficult to determine whether the problem was caused by the UART itself, the integration between modules, an uninitialized signal, or another part of the system.
+
+The UART had already been developed and tested in an earlier project, which made this particularly interesting. A module can work correctly in isolation but still produce unexpected behavior when it is integrated into a larger design.
+
+Another difficulty was debugging the system because several modules were interacting at the same time:
+
+    UART
+      │
+      ├── TX
+      │
+    Timer
+      │
+      └── IRQ
+            │
+            ▼
+    Interrupt Controller
+
+This made it harder to immediately identify the source of the problem.
+
+I did not completely resolve the "TX = XX" problem during this project. Instead, I documented it as an unresolved integration issue.
+
+Possible causes that I would investigate next include:
+
+- An uninitialized register or wire
+- A missing reset
+- Incorrect signal connections
+- Multiple modules driving the same signal
+- Incorrect UART initialization
+- A problem with the testbench
+- An incorrect clock or reset sequence
+- An integration problem between the previously developed modules
+
+This problem showed me that simulation and debugging are just as important as writing the actual Verilog code.
+
+The next time I integrate several modules, I will test each connection individually and use the waveform to find the exact point where an "X" value first appears.
+
 ---
 
 ## What I Would Improve
+
+The current integration is intentionally simple.
+
+Possible future improvements include:
+
+- Fix/improve UART
+- Connect the UART to the Interrupt Controller
+- Connect GPIO interrupts
+- Add a real CPU
+- Add Wishbone configuration
+- Add memory-mapped timer registers
+- Add interrupt acknowledgement
+- Add multiple timer sources
+- Implement more advanced interrupt handling
+
+The eventual system should contain several peripherals using the same Interrupt Controller.
 
 ---
 
@@ -1132,10 +1229,6 @@ The target architecture for this project is:
 
 ---
 
-## Next Step
-
----
-
 ## References
 
 - RISC-V ISA and Privileged Architecture Specifications
@@ -1144,3 +1237,38 @@ The target architecture for this project is:
 - HDLBits
 - Project F – FPGA tutorials
 
+---
+
+## Next Step
+
+After this integration project is completed, the next step is to continue toward a more complete CPU/SoC architecture.
+
+The system will gradually move toward:
+
+    RISC-V CPU
+         │
+         ▼
+    Wishbone Bus
+         │
+         ├── ROM
+         ├── RAM
+         ├── UART
+         ├── GPIO
+         ├── Timer
+         └── Interrupt Controller
+
+The next projects will begin bringing the hardware components closer together into an actual computer system.
+
+The long-term goal remains:
+
+    FPGA
+      ↓
+    RISC-V SoC
+      ↓
+    Boot software
+      ↓
+    Linux
+      ↓
+    Complete computer
+      ↓
+    Final PCB
