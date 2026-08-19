@@ -677,6 +677,8 @@ The testbench should test:
 
 ## Simulation
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/04-soc-architecture/Interrupt%20system%20simulation.png
+
 ---
 
 ## Architecture Diagram
@@ -808,21 +810,121 @@ Understanding this simplified architecture will make the more advanced RISC-V in
 
 ## Concepts Learned
 
+- Interrupts
+- Interrupt requests
+- IRQ lines
+- Interrupt controllers
+- Polling
+- Level-triggered interrupts
+- Edge-triggered interrupts
+- Pending interrupts
+- Interrupt masking
+- Interrupt status
+- Interrupt clearing
+- Multiple interrupt sources
+- Interrupt priority
+- CPU interrupt signals
+- Memory-mapped interrupt registers
+- Hardware/software communication
+
 ---
 
 ## Reflection
+
+This project introduced interrupts and showed how hardware can notify a CPU when an event requires attention.
+
+The most important difference I learned was between polling and interrupts.
+
+With polling, the CPU repeatedly checks hardware even when nothing has happened.
+
+With interrupts, hardware can notify the CPU only when something requires attention.
+
+I also learned why an interrupt controller is useful. Instead of connecting every peripheral directly to the CPU, the interrupt controller can collect requests from multiple peripherals and provide a structured interface to the CPU.
+
+The pending and mask registers also demonstrate how software can control which hardware interrupts are enabled.
 
 ---
 
 ## Problems
 
+One challenge was understanding the difference between an interrupt request and the final interrupt signal sent to the CPU.
+
+A peripheral may generate an interrupt, but the interrupt controller can prevent it from reaching the CPU if that interrupt source is masked.
+
+Another challenge was understanding how multiple interrupts can be active at the same time.
+
+For example:
+
+    IRQ = 0101
+
+means that multiple peripherals are requesting attention simultaneously.
+
+The controller therefore needs to keep track of the individual interrupt sources rather than only storing a single interrupt bit.
+
+Another important challenge was understanding how interrupt clearing works.
+
+An interrupt should not simply disappear because the CPU noticed it. The underlying event must be handled and the interrupt state must be cleared appropriately.
+
 ---
 
 ## What I Would Improve
 
+The current interrupt controller is intentionally simple.
+
+Possible future improvements include:
+
+- Interrupt priorities
+- Edge-triggered interrupts
+- More interrupt sources
+- Separate enable and pending registers
+- Interrupt acknowledgement
+- Nested interrupts
+- Interrupt vector support
+- Per-interrupt configuration
+- More advanced RISC-V interrupt support
+- PLIC-like functionality
+
+The final SoC will require a more realistic interrupt architecture than this simple educational controller.
+
 ---
 
 ## Current SoC Progress
+
+The conceptual SoC now contains:
+
+                         CPU
+                          │
+              ┌───────────┴───────────┐
+              │                       │
+              ▼                       ▼
+        Wishbone Bus              Interrupt
+              │                       ▲
+              ▼                       │
+       Address Decoder                │
+              │                       │
+       ┌──────┼──────┐                │
+       ▼      ▼      ▼                │
+      RAM    GPIO   UART ─────────────┤
+                                      │
+                              Interrupt Controller
+
+The important concepts learned so far are:
+
+    Digital Logic
+         ↓
+    Sequential Logic
+         ↓
+    Computer Components
+         ↓
+    CPU / SoC Architecture
+         ↓
+    Wishbone Bus
+         ↓
+    Memory-Mapped I/O
+         ↓
+    Interrupts
+
+This is building the foundation required to understand a real SoC.
 
 ---
 
@@ -837,3 +939,33 @@ Understanding this simplified architecture will make the more advanced RISC-V in
 ---
 
 ## Next Step
+
+The next major step is to continue building the SoC architecture and understand how the different components work together.
+
+The next concepts to focus on are:
+
+    Interrupts
+        ↓
+    Timers
+        ↓
+    CPU interaction
+        ↓
+    RISC-V architecture
+        ↓
+    Boot process
+
+Eventually, this architecture will lead toward:
+
+    RISC-V CPU
+         │
+         ▼
+        Bus
+         │
+         ├── ROM
+         ├── RAM
+         ├── UART
+         ├── GPIO
+         ├── Timer
+         └── Interrupt Controller
+
+This is the foundation required before moving into the Linux preparation stage.
