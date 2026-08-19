@@ -1,1 +1,776 @@
+# Timer
 
+## Goal
+
+The goal of this project is to understand how a hardware timer works and how a timer can be used to generate periodic events.
+
+A timer is an important component in a computer system because software often needs to measure time or perform an action at regular intervals.
+
+Examples include:
+
+- Operating system scheduling
+- Delays
+- Time measurement
+- Periodic tasks
+- Generating interrupts
+- System clocks
+- Device drivers
+
+The main goal of this project is to build a simple programmable hardware timer in Verilog and verify its behavior using simulation.
+
+The timer will initially be built as a standalone hardware component.
+
+It will not be connected to Wishbone yet.
+
+The architecture for this project is:
+
+    Clock
+      │
+      ▼
+    ┌──────────────────┐
+    │      Timer       │
+    │                  │
+    │  Counter         │
+    │  Compare Value   │
+    │  Enable          │
+    │  IRQ             │
+    └────────┬─────────┘
+             │
+             ▼
+           IRQ
+
+The interrupt output can later be connected to the Interrupt Controller from the previous project.
+
+---
+
+## Why a Timer?
+
+A CPU operates according to clock cycles.
+
+For example, if the system clock is:
+
+    50 MHz
+
+then the clock produces:
+
+    50,000,000 cycles per second
+
+A timer can count these clock cycles.
+
+For example:
+
+    Clock
+      │
+      ▼
+    Counter
+
+    0
+    1
+    2
+    3
+    4
+    5
+    ...
+
+Once the counter reaches a predefined value, the timer can generate an event.
+
+For example:
+
+    Counter = 999
+        ↓
+    Timer event
+        ↓
+    Counter resets
+        ↓
+    Count again
+
+This allows hardware to generate periodic events without the CPU having to constantly count clock cycles itself.
+
+---
+
+## Basic Timer Architecture
+
+The timer will contain a few important components:
+
+    ┌─────────────────────────────┐
+    │            Timer            │
+    │                             │
+    │   ┌───────────────┐         │
+    │   │    Counter    │         │
+    │   └───────┬───────┘         │
+    │           │                 │
+    │           ▼                 │
+    │   ┌───────────────┐         │
+    │   │   Comparator  │         │
+    │   └───────┬───────┘         │
+    │           │                 │
+    │           ▼                 │
+    │          IRQ                │
+    │                             │
+    └─────────────────────────────┘
+
+The counter increases every clock cycle while the timer is enabled.
+
+The comparator checks whether the counter has reached the configured terminal value.
+
+---
+
+## Timer Inputs
+
+The timer should have the following basic inputs:
+
+- "clk"
+- "reset"
+- "enable"
+- "clear"
+
+The timer should also receive a configurable value:
+
+- "period"
+
+The main output is:
+
+- "irq"
+
+A possible interface is:
+
+    module timer (
+        input         clk,
+        input         reset,
+        input         enable,
+        input         clear,
+        input  [31:0] period,
+        output        irq
+    );
+
+The exact implementation can be adjusted during development.
+
+---
+
+## Timer Counter
+
+The main part of the timer is the counter.
+
+When the timer is enabled:
+
+    counter = counter + 1
+
+For example:
+
+    Cycle 0 → counter = 0
+    Cycle 1 → counter = 1
+    Cycle 2 → counter = 2
+    Cycle 3 → counter = 3
+    Cycle 4 → counter = 4
+
+The counter continues until it reaches the configured period.
+
+---
+
+## Period
+
+The period determines how often the timer generates an event.
+
+For example:
+
+    period = 5
+
+could produce:
+
+    0
+    1
+    2
+    3
+    4
+    5
+    ↓
+    IRQ
+
+The counter can then return to zero and begin counting again.
+
+This produces a periodic signal.
+
+---
+
+## Timer Operation
+
+The basic operation is:
+
+    Reset
+      ↓
+    Counter = 0
+      ↓
+    Enable timer
+      ↓
+    Counter increases
+      ↓
+    Counter reaches period
+      ↓
+    IRQ generated
+      ↓
+    Counter resets
+      ↓
+    Count again
+
+This creates a repeating timer.
+
+---
+
+## Enable
+
+The "enable" input determines whether the timer is running.
+
+If:
+
+    enable = 0
+
+the counter should not increase.
+
+For example:
+
+    Counter = 10
+    enable  = 0
+
+After several clock cycles:
+
+    Counter = 10
+
+The timer is paused.
+
+If:
+
+    enable = 1
+
+the counter continues:
+
+    10
+    11
+    12
+    13
+    ...
+
+This allows the timer to be started and stopped.
+
+---
+
+## Reset
+
+When reset is asserted, the timer should return to a known state.
+
+The expected state is:
+
+    counter = 0
+    irq     = 0
+
+After reset is released, the timer can begin counting if it is enabled.
+
+---
+
+## Clear
+
+The "clear" input is used to reset the counter.
+
+For example:
+
+    counter = 25
+
+If:
+
+    clear = 1
+
+then:
+
+    counter = 0
+
+This can later be useful when software acknowledges a timer interrupt.
+
+---
+
+## Timer Interrupt
+
+The timer can generate an interrupt when the counter reaches the configured period.
+
+For example:
+
+    period = 10
+
+The counter progresses:
+
+    0
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+    9
+    10
+     ↓
+    IRQ
+
+The interrupt can then be sent to the Interrupt Controller built in the previous project.
+
+The future architecture will therefore be:
+
+    Timer
+      │
+      │ IRQ
+      ▼
+    Interrupt Controller
+      │
+      │ IRQ_OUT
+      ▼
+    CPU
+
+For this project, however, the timer will be tested independently.
+
+---
+
+## Periodic Interrupts
+
+A useful timer should be able to generate repeated events.
+
+For example, if:
+
+    period = 5
+
+the timer could generate:
+
+    Counter:
+    0 1 2 3 4 5
+              ↑
+             IRQ
+
+then:
+
+    0 1 2 3 4 5
+              ↑
+             IRQ
+
+and again:
+
+    0 1 2 3 4 5
+              ↑
+             IRQ
+
+This creates a periodic interrupt.
+
+---
+
+## Timer Frequency
+
+The timer's timing depends on the system clock.
+
+For example, with:
+
+    Clock frequency = 50 MHz
+
+the clock period is:
+
+    1 / 50,000,000 = 20 ns
+
+If the timer counts:
+
+    50,000,000 cycles
+
+then approximately one second has passed.
+
+Therefore:
+
+    Timer period = Clock frequency / Desired frequency
+
+For example, to generate a 1 Hz event with a 50 MHz clock:
+
+    Period = 50,000,000
+
+For a 100 Hz event:
+
+    Period = 50,000,000 / 100
+
+    Period = 500,000
+
+This relationship is important when the timer is later used by the operating system.
+
+---
+
+## Timer Frequency Example
+
+Assume:
+
+    Clock = 10 MHz
+    Period = 10
+
+The clock produces:
+
+    10,000,000 cycles/second
+
+The timer generates an event every:
+
+    10 cycles
+
+Therefore the timer frequency is approximately:
+
+    10,000,000 / 10
+    = 1,000,000 Hz
+
+The actual implementation must take into account whether the terminal count itself is included.
+
+The important concept is that the timer divides the system clock into a slower periodic event.
+
+---
+
+## Timer State
+
+The timer can be represented using:
+
+    counter
+    period
+    enable
+    irq
+
+The basic logic is:
+
+    if reset:
+        counter = 0
+
+    else if clear:
+        counter = 0
+
+    else if enable:
+        if counter >= period:
+            counter = 0
+        else:
+            counter = counter + 1
+
+The exact behavior of "irq" should be defined clearly in the implementation.
+
+---
+
+## IRQ Behavior
+
+For this project, "irq" should represent that the timer has reached its terminal count.
+
+A simple implementation can generate a one-cycle pulse.
+
+For example:
+
+    Clock:
+    ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐
+    └─┘ └─┘ └─┘ └─┘ └─┘ └─┘
+
+    Counter:
+     0   1   2   3   4   0
+
+    IRQ:
+     0   0   0   0   1   0
+
+This is useful because the Interrupt Controller can detect the timer event.
+
+---
+
+## Why a One-Cycle IRQ?
+
+A one-cycle interrupt pulse makes the timer act as an event generator.
+
+Instead of keeping the interrupt permanently active:
+
+    IRQ = 111111111111...
+
+the timer produces:
+
+    IRQ = 000010000100001...
+
+This represents separate timer events.
+
+Later, the Interrupt Controller or CPU can decide how those events should be handled.
+
+---
+
+## Truth Table
+
+The basic control behavior is:
+
+| Reset | Clear | Enable | Counter Behavior |
+|-------|-------|--------|------------------|
+| 1     | X     | X      | Reset to 0       |
+| 0     | 1     | X      | Reset to 0       |
+| 0     | 0     | 0      | Hold             |
+| 0     | 0     | 1      | Count            |
+
+The timer interrupt depends on the counter reaching the configured period.
+
+---
+
+## Example Timing Table
+
+Assume:
+
+    period = 4
+
+A possible expected sequence is:
+
+| Clock | Enable | Counter | IRQ |
+|-------|--------|---------|-----|
+| 0     | 1      | 0       | 0   |
+| 1     | 1      | 1       | 0   |
+| 2     | 1      | 2       | 0   |
+| 3     | 1      | 3       | 0   |
+| 4     | 1      | 4       | 1   |
+| 5     | 1      | 0       | 0   |
+| 6     | 1      | 1       | 0   |
+| 7     | 1      | 2       | 0   |
+| 8     | 1      | 3       | 0   |
+| 9     | 1      | 4       | 1   |
+
+The exact implementation may produce the IRQ one cycle earlier or later depending on how the comparison and counter update are written.
+
+The important requirement is that the behavior is consistent and documented.
+
+---
+
+## Simulation
+
+The simulation should contain at least:
+
+- "clk"
+- "reset"
+- "enable"
+- "clear"
+- "period"
+- "counter"
+- "irq"
+
+The most important relationship to observe is:
+
+    enable
+       │
+       ▼
+    counter
+       │
+       ▼
+    period comparison
+       │
+       ▼
+      IRQ
+
+---
+
+## Architecture Diagram
+
+The architecture of the timer is:
+
+    ┌──────────────────────────────┐
+    │             Timer            │
+    │                              │
+    │   enable ──────┐             │
+    │                ▼             │
+    │          ┌───────────┐       │
+    │          │  Counter  │       │
+    │          └─────┬─────┘       │
+    │                │             │
+    │                ▼             │
+    │          ┌───────────┐       │
+    │ period ─►│ Comparator│       │
+    │          └─────┬─────┘       │
+    │                │             │
+    │                ▼             │
+    │               IRQ            │
+    └──────────────────────────────┘
+
+---
+
+## Future Connection to Interrupt Controller
+
+The timer is designed to eventually connect to the Interrupt Controller from the previous project.
+
+The future architecture will be:
+
+    Timer
+      │
+      │ IRQ
+      ▼
+    Interrupt Controller
+      │
+      │ IRQ_OUT
+      ▼
+    RISC-V CPU
+
+This means that the timer can periodically interrupt the CPU.
+
+For example:
+
+    Timer reaches period
+          ↓
+    Timer generates IRQ
+          ↓
+    Interrupt Controller
+          ↓
+    CPU receives interrupt
+          ↓
+    CPU runs interrupt handler
+
+This is an important mechanism for operating systems.
+
+---
+
+## Future Connection to Wishbone
+
+The timer will eventually become a memory-mapped peripheral.
+
+The CPU could then configure it through the Wishbone bus.
+
+A future register map could look like:
+
+| Address  | Register        | Description          |
+|----------|-----------------|----------------------|
+| "0x4000" | "TIMER_CONTROL" | Enable/disable timer |
+| "0x4004" | "TIMER_PERIOD"  | Timer period         |
+| "0x4008" | "TIMER_COUNTER" | Current counter      |
+| "0x400C" | "TIMER_STATUS"  | Timer status         |
+
+However, these registers are not part of the current project yet.
+
+The current timer should remain standalone.
+
+---
+
+## Why the Timer will matter for Linux
+
+Operating systems need a reliable source of periodic timing.
+
+Linux uses timers for many tasks, including:
+
+- Process scheduling
+- Timekeeping
+- Delays
+- Software timers
+- Periodic system tasks
+
+A simplified example is:
+
+    Timer
+      ↓
+    Interrupt
+      ↓
+    CPU
+      ↓
+    Linux kernel
+      ↓
+    Scheduler
+
+The timer therefore becomes an important component of the final Linux-capable SoC.
+
+---
+
+## Relation to the Previous Interrupt Controller
+
+The previous project introduced:
+
+    Interrupt Controller
+
+This project introduces:
+
+    Timer
+
+The two components will eventually connect:
+
+    Timer
+      │
+      │ IRQ
+      ▼
+    Interrupt Controller
+      │
+      │ IRQ_OUT
+      ▼
+    CPU
+
+However, they should initially be developed and tested independently.
+
+This makes debugging easier and ensures that each component is understood before integration.
+
+---
+
+## Concepts Learned
+
+---
+
+## Reflection
+
+---
+
+## Problems
+
+---
+
+## What I Would Improve
+
+---
+
+## Current SoC Progress
+
+The conceptual SoC now contains:
+
+                         CPU
+                          │
+              ┌───────────┴───────────┐
+              │                       │
+              ▼                       ▼
+        Wishbone Bus              Interrupt
+              │                       ▲
+              ▼                       │
+       Address Decoder                │
+              │                       │
+       ┌──────┼──────┐                │
+       ▼      ▼      ▼                │
+      RAM    GPIO   UART ─────────────┤
+                                      │
+                              Interrupt Controller
+                                      ▲
+                                      │
+                                    Timer
+
+The Timer is currently developed as a standalone component.
+
+The final connection will be:
+
+    Timer
+      ↓
+    Interrupt Controller
+      ↓
+    CPU
+
+The Wishbone interface will be added later when the timer becomes a memory-mapped SoC peripheral.
+
+---
+
+## Development Principle
+
+The project follows the same development principle as the previous SoC components:
+
+    Build component
+         ↓
+    Test component
+         ↓
+    Verify simulation
+         ↓
+    Understand component
+         ↓
+    Integrate into SoC later
+
+This prevents the entire SoC from becoming difficult to debug.
+
+---
+
+## References
+
+- RISC-V Privileged Architecture Specification
+- Project F – FPGA Tutorials
+- Nandland – Learn Verilog
+- HDLBits
+- Wishbone B4 Specification
+
+---
+
+## Next Step
