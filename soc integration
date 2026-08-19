@@ -1,1 +1,1146 @@
+# SoC Integration
+
+## Goal
+
+The goal of this project is to integrate the hardware components developed throughout the previous projects into one complete System-on-Chip (SoC) architecture.
+
+Up to this point, the individual components have been developed and tested separately.
+
+The purpose of this project is to connect them together and create a functioning hardware system.
+
+The SoC will contain:
+
+- CPU
+- ROM
+- RAM
+- Register File
+- ALU
+- UART
+- GPIO
+- Timer
+- Interrupt Controller
+- Memory-Mapped I/O
+- Wishbone Bus
+
+The final architecture should look approximately like:
+
+    ┌───────────────────────────────────────────────┐
+    │                     SoC                       │
+    │                                               │
+    │                 ┌──────────┐                  │
+    │                 │  RISC-V  │                  │
+    │                 │   CPU    │                  │
+    │                 └────┬─────┘                  │
+    │                      │                        │
+    │                Wishbone Bus                   │
+    │                      │                        │
+    │          ┌───────────┼────────┐               │
+    │          │           │        │               │
+    │          ▼           ▼        ▼               │
+    │         ROM         RAM      MMIO             │ 
+    │                               │               │
+    │                  ┌────────────┼──────────┐    │
+    │                  │            │          │    │
+    │                  ▼            ▼          ▼    │
+    │                 UART         GPIO      Timer  │
+    │                                               │
+    │                     Timer IRQ                 │
+    │                         │                     │
+    │                         ▼                     │
+    │                Interrupt Controller           │
+    │                         │                     │
+    │                         ▼                     │
+    │                        CPU                    │
+    │                                               │
+    └───────────────────────────────────────────────┘
+
+This project is the final integration step before moving into the Linux preparation stage.
+
+---
+
+## What is a SoC?
+
+SoC stands for System-on-Chip.
+
+A SoC combines multiple components required for a computer into one integrated hardware system.
+
+Instead of having:
+
+    CPU
+    RAM
+    UART
+    GPIO
+    Timer
+    Interrupt Controller
+
+as completely separate systems, they are connected together into one architecture.
+
+For this project, the FPGA will contain the complete SoC.
+
+Conceptually:
+
+    FPGA
+      │
+      ▼
+    SoC
+      │
+      ├── CPU
+      ├── Memory
+      ├── Peripherals
+      ├── Bus
+      └── Interrupt System
+
+---
+
+## Why This Project?
+
+The previous projects focused on individual components.
+
+For example:
+
+    ALU
+    RAM
+    ROM
+    Register File
+    UART
+    GPIO
+    Timer
+    Interrupt Controller
+
+These components are useful individually, but they do not form a computer until they are connected together.
+
+This project answers the question:
+
+- How do all these components communicate to form a computer?
+
+The main concepts are:
+
+- Bus communication
+- Address decoding
+- Memory-mapped peripherals
+- CPU and memory interaction
+- CPU and peripheral interaction
+- Interrupts
+- System-level integration
+
+---
+
+## Previous Components
+
+The following components have already been developed in earlier projects.
+
+### ALU
+
+The Arithmetic Logic Unit performs operations such as:
+
+- Addition
+- Subtraction
+- AND
+- OR
+- XOR
+- Comparisons
+
+The CPU uses the ALU to perform calculations.
+
+---
+
+### Register File
+
+The Register File stores CPU registers.
+
+Conceptually:
+
+    CPU
+     │
+     ▼
+    Register File
+     │
+     ▼
+     ALU
+
+The CPU reads operands from the register file and writes results back into it.
+
+---
+
+### ROM
+
+ROM provides non-volatile instruction or constant storage.
+
+The CPU can read instructions from ROM during boot.
+
+Conceptually:
+
+    CPU
+     │
+     │ Address
+     ▼
+    ROM
+     │
+     │ Instruction
+     ▼
+    CPU
+
+---
+
+### RAM
+
+RAM provides writable memory.
+
+The CPU can:
+
+- Read data
+- Write data
+- Store variables
+- Store stack data
+- Store runtime information
+
+Conceptually:
+
+    CPU
+     │
+     ├── Address
+     ├── Write Data
+     └── Write Enable
+             │
+             ▼
+            RAM
+
+---
+
+### UART
+
+The UART provides serial communication.
+
+It can eventually be used for:
+
+- Debug output
+- Console access
+- Linux serial terminal
+- Communication with another computer
+
+The UART from the previous project should be reused.
+
+It should not be rewritten for this project.
+
+---
+
+### GPIO
+
+GPIO provides digital input and output.
+
+It can be used for:
+
+- LEDs
+- Buttons
+- Switches
+- External digital signals
+
+The GPIO module should be reused from the previous project.
+
+---
+
+### Timer
+
+The Timer counts clock cycles and generates periodic events.
+
+Its basic architecture is:
+
+    Clock
+      │
+      ▼
+    Timer
+      │
+      │ IRQ
+      ▼
+    Interrupt Controller
+
+The Timer should be reused from the previous project.
+
+---
+
+### Interrupt Controller
+
+The Interrupt Controller receives interrupt requests from peripherals.
+
+For example:
+
+    UART ──────┐
+    GPIO ──────┼──► Interrupt Controller ───► CPU
+    Timer ─────┘
+
+The controller determines which interrupts are active and whether they are enabled.
+
+---
+
+## CPU
+
+The central component of the SoC is the CPU.
+
+The CPU is responsible for:
+
+- Fetching instructions
+- Decoding instructions
+- Executing instructions
+- Reading registers
+- Writing registers
+- Accessing memory
+- Accessing peripherals
+- Responding to interrupts
+
+The final CPU will be based on RISC-V.
+
+The basic CPU architecture is:
+
+    ┌──────────────────────┐
+    │         CPU          │
+    │                      │
+    │  Program Counter     │
+    │  Instruction Decode  │
+    │  Register File       │
+    │  ALU                 │
+    │  Control Logic       │
+    └──────────┬───────────┘
+               │
+               ▼
+              Bus
+
+The exact CPU implementation may evolve during the project.
+
+---
+
+## CPU Instruction Flow
+
+The CPU repeatedly performs a simplified cycle:
+
+    Fetch
+      ↓
+    Decode
+      ↓
+    Execute
+      ↓
+    Memory Access
+      ↓
+    Write Back
+      ↓
+    Fetch next instruction
+
+For example:
+
+    PC
+     │
+     ▼
+    ROM
+     │
+     ▼
+    Instruction
+     │
+     ▼
+    Decode
+     │
+     ▼
+    Register File
+     │
+     ▼
+    ALU
+     │
+     ▼
+    Result
+     │
+     ▼
+    Register File
+
+This is the basic operation of a processor.
+
+---
+
+## System Bus
+
+The different components need a way to communicate.
+
+The SoC therefore uses a bus.
+
+The bus carries information such as:
+
+- Address
+- Data
+- Read/write control
+- Transaction status
+
+The CPU can use the bus to communicate with:
+
+- RAM
+- ROM
+- UART
+- GPIO
+- Timer
+- Other peripherals
+
+---
+
+## Wishbone
+
+The SoC uses a Wishbone-style bus architecture for communication between the CPU and peripherals.
+
+The basic concept is:
+
+    CPU / Master
+         │
+         ▼
+    Wishbone Bus
+         │
+         ▼
+    Address Decoder
+         │
+    ┌────┼────┬──────┬──────┐
+    ▼    ▼    ▼      ▼      ▼
+   ROM   RAM  UART   GPIO   Timer
+
+The CPU acts as the bus master.
+
+The peripherals act as bus slaves.
+
+---
+
+## Master and Slave
+
+### Master
+
+The master initiates a bus transaction.
+
+In this SoC, the CPU is the master.
+
+For example:
+
+    CPU
+     │
+     │ Read address
+     ▼
+    RAM
+
+### Slave
+
+A slave responds to a bus transaction.
+
+Examples:
+
+- ROM
+- RAM
+- UART
+- GPIO
+- Timer
+
+Therefore:
+
+    CPU = Master
+
+and:
+
+    ROM = Slave
+    RAM = Slave
+    UART = Slave
+    GPIO = Slave
+    Timer = Slave
+
+---
+
+## Address Decoder
+
+The address decoder determines which peripheral should respond to a bus transaction.
+
+For example:
+
+    CPU address = 0x00001000
+
+The decoder determines:
+
+    0x0000xxxx → RAM
+
+If:
+
+    CPU address = 0x10000000
+
+the decoder could determine:
+
+    0x1000xxxx → UART
+
+The exact address map should be documented and kept consistent throughout the SoC.
+
+---
+
+## Proposed Memory Map
+
+A simple memory map can be:
+
+| Address Range             | Device               |
+|---------------------------|----------------------|
+| "0x00000000 – 0x0000FFFF" | ROM                  |
+| "0x00010000 – 0x0001FFFF" | RAM                  |
+| "0x10000000 – 0x100000FF" | UART                 |
+| "0x10000100 – 0x100001FF" | GPIO                 |
+| "0x10000200 – 0x100002FF" | Timer   	           |
+| "0x10000300 – 0x100003FF" | Interrupt Controller |
+
+The exact addresses may be changed depending on the final CPU and bus implementation.
+
+The important requirement is that every peripheral has a unique address range.
+
+---
+
+## Memory-Mapped I/O
+
+Peripherals are accessed using addresses just like memory.
+
+This is called Memory-Mapped I/O (MMIO).
+
+For example:
+
+    CPU writes to:
+
+    0x10000100
+
+The address decoder determines that this address belongs to GPIO.
+
+Therefore:
+
+    CPU
+     │
+     │ Write 1 to 0x10000100
+     ▼
+    Address Decoder
+     │
+     ▼
+    GPIO
+     │
+     ▼
+    LED = 1
+
+The CPU does not need a special instruction to access GPIO.
+
+It simply performs a memory transaction to the correct address.
+
+---
+
+## UART MMIO
+
+The UART can be assigned a range such as:
+
+    0x10000000 – 0x100000FF
+
+For example:
+
+    0x10000000 → UART DATA
+    0x10000004 → UART STATUS
+    0x10000008 → UART CONTROL
+
+The exact register map should match the UART implementation.
+
+---
+
+## GPIO MMIO
+
+GPIO can be assigned:
+
+    0x10000100 – 0x100001FF
+
+For example:
+
+    0x10000100 → GPIO DATA
+    0x10000104 → GPIO DIRECTION
+    0x10000108 → GPIO INPUT
+
+The exact register map depends on the GPIO implementation.
+
+---
+
+## Timer MMIO
+
+The Timer can be assigned:
+
+    0x10000200 – 0x100002FF
+
+A possible register map is:
+
+| Address      | Register      |
+|--------------|---------------|
+| "0x10000200" | TIMER_CONTROL |
+| "0x10000204" | TIMER_PERIOD  |
+| "0x10000208" | TIMER_COUNTER |
+| "0x1000020C" | TIMER_STATUS  |
+
+These registers allow software to configure the timer.
+
+For example:
+
+    Write 1 to TIMER_CONTROL
+           ↓
+    Timer enabled
+
+and:
+
+    Write 50000000 to TIMER_PERIOD
+           ↓
+    Timer configured for a specific interval
+
+---
+
+## Interrupt Controller MMIO
+
+The Interrupt Controller can be assigned:
+
+    0x10000300 – 0x100003FF
+
+A possible register map is:
+
+| Address      | Register    |
+|--------------|-------------|
+| "0x10000300" | IRQ_PENDING |
+| "0x10000304" | IRQ_MASK    |
+| "0x10000308" | IRQ_STATUS  |
+| "0x1000030C" | IRQ_CLEAR   |
+
+This allows software to inspect and control interrupts.
+
+---
+
+## Interrupt Architecture
+
+The interrupt system is:
+
+    UART IRQ ──────┐
+                   │
+    GPIO IRQ ──────┼──► Interrupt Controller
+                   │
+    Timer IRQ ─────┘
+                           │
+                           ▼
+                         CPU
+
+The CPU receives a single interrupt output.
+
+The Interrupt Controller keeps track of the individual sources.
+
+---
+
+## Timer Interrupt
+
+The Timer can periodically generate:
+
+    timer_irq
+
+This is connected to the Interrupt Controller.
+
+The flow is:
+
+    Timer reaches terminal count
+             ↓
+        timer_irq = 1
+             ↓
+    Interrupt Controller
+             ↓
+         IRQ_OUT = 1
+             ↓
+            CPU
+             ↓
+       Interrupt handler
+
+This is an important part of the eventual Linux system.
+
+---
+
+## UART Interrupt
+
+The UART can eventually generate an interrupt when:
+
+- Data is received
+- Transmission is complete
+- Another UART event occurs
+
+The architecture becomes:
+
+    UART
+      │
+      │ IRQ
+      ▼
+    Interrupt Controller
+      │
+      ▼
+     CPU
+
+This allows software to react to serial communication without continuously polling the UART.
+
+---
+
+## GPIO Interrupt
+
+GPIO can eventually generate interrupts when an input changes.
+
+For example:
+
+    Button pressed
+         ↓
+    GPIO detects change
+         ↓
+    GPIO IRQ
+         ↓
+    Interrupt Controller
+         ↓
+    CPU
+
+This allows hardware inputs to trigger software events.
+
+---
+
+## SoC Top-Level Architecture
+
+The complete architecture is:
+
+    ┌────────────────────────────────────────────────────┐
+    │                       SoC                          │
+    │                                                    │
+    │                  ┌──────────────┐                  │
+    │                  │ RISC-V CPU   │                  │
+    │                  │              │                  │
+    │                  │ ALU          │                  │
+    │                  │ Registers    │                  │
+    │                  │ Control      │                  │
+    │                  │ PC           │                  │
+    │                  └──────┬───────┘                  │
+    │                         │                          │
+    │                    Wishbone Bus                    │
+    │                         │                          │
+    │                  ┌──────▼───────┐                  │
+    │                  │Address       │                  │
+    │                  │Decoder       │                  │
+    │                  └──────┬───────┘                  │
+    │                         │                          │
+    │             ┌───────────┼────────┐                 │
+    │             │           │        │                 │
+    │             ▼           ▼        ▼                 │
+    │            ROM         RAM      MMIO               │ 
+    │                                  │                 │
+    │                     ┌────────────┼──────────┐      │
+    │                     │            │          │      │
+    │                     ▼            ▼          ▼      │
+    │                    UART         GPIO      Timer    │
+    │                                                    │
+    │                        Timer IRQ                   │
+    │                            │                       │
+    │                            ▼                       │
+    │                   Interrupt Controller             │
+    │                            │                       │
+    │                            ▼                       │
+    │                           CPU                      │
+    │                                                    │
+    └────────────────────────────────────────────────────┘
+---
+
+## Data Flow
+
+A typical memory read works like:
+
+    CPU
+     │
+     │ Address
+     ▼
+    Wishbone Bus
+     │
+     ▼
+    Address Decoder
+     │
+     ▼
+    Selected Slave
+     │
+     │ Data
+     ▼
+    CPU
+
+For example:
+
+    CPU reads RAM
+         ↓
+    Address = RAM address
+         ↓
+    Address Decoder selects RAM
+         ↓
+    RAM returns data
+         ↓
+    CPU receives data
+
+---
+
+## Data Write
+
+A typical write works like:
+
+    CPU
+     │
+     │ Address + Data + Write Enable
+     ▼
+    Wishbone Bus
+     │
+     ▼
+    Address Decoder
+     │
+     ▼
+    Selected Peripheral
+     │
+     ▼
+    Data stored
+
+For example:
+
+    CPU writes GPIO
+         ↓
+    Address = GPIO address
+         ↓
+    Decoder selects GPIO
+         ↓
+    GPIO receives data
+         ↓
+    Output changes
+
+---
+
+## CPU and ROM
+
+The CPU needs somewhere to fetch instructions from.
+
+The ROM can contain the initial program.
+
+The basic process is:
+
+    Program Counter
+          │
+          ▼
+         ROM
+          │
+          ▼
+      Instruction
+          │
+          ▼
+         CPU
+
+For the first integration test, the ROM can contain a very small test program.
+
+The program does not need to run Linux yet.
+
+---
+
+## CPU and RAM
+
+RAM is used for runtime data.
+
+The CPU should be able to:
+
+- Read from RAM
+- Write to RAM
+
+A simple test could be:
+
+    Write:
+
+    RAM[0x100] = 42
+
+Then:
+
+    Read:
+
+    RAM[0x100]
+
+Expected:
+
+    42
+
+This verifies that the CPU can communicate with writable memory.
+
+---
+
+## CPU and UART
+
+A simple SoC test can write a character to the UART.
+
+Conceptually:
+
+    CPU
+     │
+     │ Write character
+     ▼
+    UART DATA register
+     │
+     ▼
+    UART TX
+     │
+     ▼
+    Serial output
+
+For example, the CPU could write:
+
+    'H'
+    'e'
+    'l'
+    'l'
+    'o'
+
+The UART output should then produce:
+
+    Hello
+
+This is an important milestone because UART will eventually be used as the Linux console.
+
+---
+
+## CPU and GPIO
+
+The CPU can also control GPIO.
+
+For example:
+
+    CPU writes:
+
+    GPIO = 1
+
+Then:
+
+    LED = ON
+
+The CPU could later run a simple program such as:
+
+    while (1) {
+        LED = 1;
+        delay();
+        LED = 0;
+        delay();
+    }
+
+This demonstrates software controlling physical hardware.
+
+---
+
+## CPU and Timer
+
+The CPU should eventually be able to configure the Timer.
+
+For example:
+
+    CPU
+     │
+     │ Write period
+     ▼
+    TIMER_PERIOD
+     │
+     ▼
+    Timer starts
+     │
+     ▼
+    Timer reaches period
+     │
+     ▼
+    Interrupt
+     │
+     ▼
+    CPU
+
+This creates the foundation for operating-system timing.
+
+---
+
+## Interrupt Handling
+
+The CPU needs to respond when "IRQ_OUT" becomes active.
+
+The simplified process is:
+
+    CPU executing program
+           ↓
+    IRQ_OUT becomes active
+           ↓
+    CPU detects interrupt
+           ↓
+    CPU saves required state
+           ↓
+    CPU jumps to interrupt handler
+           ↓
+    Handler determines interrupt source
+           ↓
+    Handler services device
+           ↓
+    Interrupt cleared
+           ↓
+    CPU returns to previous program
+
+The exact implementation depends on the RISC-V CPU.
+
+---
+
+## First Integration Goal
+
+The first goal is not Linux.
+
+The first goal is to prove that the complete SoC works.
+
+The first successful test should demonstrate:
+
+    CPU
+     ↓
+    ROM
+     ↓
+    CPU executes instructions
+     ↓
+    RAM
+     ↓
+    UART
+     ↓
+    GPIO
+
+Once these work, the interrupt system can be verified.
+
+---
+
+## Simulation
+
+---
+
+## Hardware Demonstration
+
+If the SoC is eventually synthesized onto the FPGA board, a simple hardware demonstration should be created.
+
+Possible demonstration:
+
+    FPGA
+     │
+     ▼
+    SoC
+     │
+     ├── UART → Computer terminal
+     │
+     ├── GPIO → LEDs
+     │
+     └── Timer → Interrupts
+
+The UART could print:
+
+    SoC booted successfully
+    RAM test passed
+    GPIO test passed
+    Timer initialized
+    Interrupts enabled
+
+This would provide a clear demonstration that the SoC is actually running.
+
+---
+
+## FPGA Integration
+
+The SoC can eventually be synthesized using the FPGA development tools.
+
+The general process is:
+
+    Verilog
+      ↓
+    Synthesis
+      ↓
+    Implementation
+      ↓
+    Bitstream
+      ↓
+    FPGA
+      ↓
+    SoC running on hardware
+
+The FPGA board will provide the physical implementation of the SoC.
+
+---
+
+## Important Limitation
+
+This project is not yet the final Linux computer.
+
+The SoC must still have several things completed before Linux can run.
+
+For example:
+
+- A suitable RISC-V CPU
+- Correct boot behavior
+- Sufficient RAM
+- Interrupt support
+- Timer support
+- UART driver support
+- Software toolchain
+- Bootloader or firmware
+- Linux-compatible hardware configuration
+- Device tree
+- FPGA hardware verification
+
+This project is therefore the hardware foundation for the Linux stage.
+
+---
+
+## Concepts Learned
+
+---
+
+## Reflection
+
+---
+
+## Problems
+
+---
+
+## What I Would Improve
+
+---
+
+## Final Architecture
+
+The target architecture for this project is:
+
+    ┌─────────────────────────────────────────────────────────┐
+    │                         SoC                             │
+    │                                                         │
+    │                      ┌──────────┐                       │
+    │                      │ RISC-V   │                       │
+    │                      │   CPU    │                       │
+    │                      └────┬─────┘                       │
+    │                           │                             │
+    │                     Wishbone Bus                        │
+    │                           │                             │
+    │                    ┌──────▼───────┐                     │
+    │                    │Address       │                     │
+    │                    │Decoder       │                     │
+    │                    └──────┬───────┘                     │
+    │                           │                             │
+    │               ┌───────────┼────────┐                    │
+    │               │           │        │                    │
+    │               ▼           ▼        ▼                    │
+    │              ROM         RAM      MMIO                  │ 
+    │                                    │                    │
+    │                       ┌────────────┼──────────┐         │
+    │                       │            │          │         │
+    │                       ▼            ▼          ▼         │
+    │                      UART         GPIO      Timer       │
+    │                                                         │
+    │                         IRQ sources                     │
+    │                              │                          │
+    │                              ▼                          │
+    │                    Interrupt Controller                 │
+    │                              │                          │
+    │                              ▼                          │
+    │                             CPU                         │
+    │                                                         │
+    └─────────────────────────────────────────────────────────┘
+
+---
+
+## Next Step
+
+---
+
+## References
+
+- RISC-V ISA and Privileged Architecture Specifications
+- Wishbone B4 Specification
+- Nandland – Learn Verilog
+- HDLBits
+- Project F – FPGA tutorials
 
