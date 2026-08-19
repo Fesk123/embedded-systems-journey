@@ -249,3 +249,329 @@ Interrupts
 
 The goal is to understand how these components communicate with each other and how a complete SoC is structured before moving further towards RISC-V and Linux.
 
+
+########## Journal – Step 4: Understanding SoC ##########
+
+## Overview
+
+During this step, I started moving from individual digital components toward a complete System-on-Chip (SoC) architecture.
+
+The goal was to understand how the different components of a computer communicate with each other and how they can eventually be combined into a system capable of running software.
+
+I focused on building and understanding several important SoC components before attempting to integrate them.
+
+---
+
+## Projects Completed
+
+During this step, I worked on:
+
+- Simple SoC
+- CPU/SoC architecture
+- GPIO
+- Memory-Mapped I/O
+- Interrupt Controller
+- Timer
+- Timer + Interrupt Controller Integration
+
+I also reused components that I had created during earlier steps, such as:
+
+- RAM
+- ROM
+- UART
+- Register File
+- ALU
+
+---
+
+## What I Learned
+
+A functional SoC requires many different components that communicate with each other.
+
+I learned about:
+
+- SoC architecture
+- CPU and peripheral communication
+- Memory-Mapped I/O
+- GPIO
+- Interrupts
+- Interrupt Controllers
+- Hardware Timers
+- Interrupt masking
+- Interrupt status
+- Peripheral integration
+- System-level simulation
+- Modular hardware design
+
+I also learned more about how buses can be used to connect different peripherals to a CPU.
+
+---
+
+## Memory-Mapped I/O
+
+One of the important concepts I learned was Memory-Mapped I/O.
+
+Instead of having a completely separate communication mechanism for every peripheral, peripherals can be assigned specific memory addresses.
+
+For example:
+
+    CPU
+     │
+     ▼
+    Bus
+     │
+     ├── RAM
+     ├── UART
+     ├── GPIO
+     └── Timer
+
+The CPU can then communicate with peripherals by reading and writing to their assigned addresses.
+
+This is important because it provides a standardized way for software to communicate with hardware.
+
+---
+
+## GPIO
+
+I implemented a GPIO peripheral to understand how the CPU could eventually interact with external hardware.
+
+GPIO provides a simple interface between the digital system and the outside world.
+
+Examples include:
+
+- LEDs
+- Buttons
+- Switches
+- Sensors
+- Other digital devices
+
+This helped me understand how the internal SoC can eventually interact with physical hardware on an FPGA or PCB.
+
+---
+
+## Interrupts
+
+I learned why interrupts are necessary in a computer system.
+
+Without interrupts, the CPU could constantly poll peripherals:
+
+    Check UART
+    Check GPIO
+    Check Timer
+    Check UART
+    Check GPIO
+    Check Timer
+    ...
+
+With interrupts, hardware can notify the CPU when something requires attention.
+
+The basic architecture is:
+
+    Peripheral
+        │
+        ▼
+    Interrupt Controller
+        │
+        ▼
+       CPU
+
+I built a simplified Interrupt Controller that can receive interrupt requests and determine which interrupts are enabled.
+
+---
+
+## Timer
+
+I also implemented a hardware timer.
+
+The timer works by counting clock cycles.
+
+For example:
+
+    Clock
+      ↓
+    Counter
+      ↓
+    Compare with period
+      ↓
+    Interrupt
+
+This allows hardware to generate periodic events.
+
+I learned that the timer does not directly measure seconds. Instead, it counts clock cycles, and the relationship between the clock frequency and the timer period determines the resulting time interval.
+
+---
+
+## Integration
+
+At the end of the step, I attempted to integrate the Timer and Interrupt Controller.
+
+The intended architecture was:
+
+    Timer
+      │
+      │ IRQ
+      ▼
+    Interrupt Controller
+      │
+      │ IRQ_OUT
+      ▼
+     CPU
+
+The CPU was not implemented yet, so I tested the system through simulation.
+
+This was the first point where I started experiencing more realistic system-level debugging problems.
+
+---
+
+## Problems During Integration
+
+The integration did not work completely as planned.
+
+One of the main problems appeared with the UART from an earlier project.
+
+During the final simulation, the UART "TX" signal eventually became:
+
+    XX
+
+instead of a valid:
+
+    0
+
+or:
+
+    1
+
+This indicated that the simulator had an unknown value for the signal.
+
+The UART had previously been developed and tested separately, which showed me an important lesson:
+
+A module working correctly on its own does not guarantee that it will work correctly when integrated into a larger system.
+
+The larger the system became, the more difficult it was to determine where an incorrect signal originated.
+
+Possible causes included:
+
+- Uninitialized signals
+- Reset problems
+- Incorrect connections
+- Testbench problems
+- Clocking problems
+- Multiple drivers
+- Integration issues
+
+I did not completely solve the "TX = XX" problem during this step.
+
+---
+
+## What I Learned From the Problems
+
+Although the final integration was not completely successful, I consider the debugging problems an important part of the project.
+
+I learned that hardware development is not only about writing Verilog.
+
+A large part of the work is:
+
+    Build
+      ↓
+    Simulate
+      ↓
+    Observe waveform
+      ↓
+    Find incorrect signal
+      ↓
+    Trace signal backwards
+      ↓
+    Fix problem
+      ↓
+    Simulate again
+
+I also learned that it is much easier to debug a system when the individual modules have already been tested independently.
+
+This will be especially important when I eventually build the complete SoC.
+
+---
+
+## Reflection
+
+This step was an important transition from learning individual digital components to thinking about an actual computer architecture.
+
+At the beginning, I was mainly working with individual modules such as RAM, ROM, UART and the ALU.
+
+During this step, I started thinking about how these components communicate and how they can be combined into a larger system.
+
+The biggest lesson was that integration is significantly more difficult than building individual components.
+
+The fact that the UART eventually produced `XX` in the simulation showed me that there are many more possible problems once several modules interact with each other.
+
+Even though the final integration was not completely successful, I gained a much better understanding of how debugging a larger digital system works.
+
+---
+
+## Current Architecture
+
+The conceptual SoC I have reached so far is approximately:
+
+                         CPU
+                          │
+              ┌───────────┴───────────┐
+              │                       │
+              ▼                       ▼
+        Wishbone Bus              Interrupt
+              │                       ▲
+              ▼                       │
+       Address Decoder                │
+              │                       │
+       ┌──────┼──────┐                │
+       ▼      ▼      ▼                │
+      RAM    GPIO   UART              │
+                                      │
+                              Interrupt Controller
+                                      ▲
+                                      │
+                                    Timer
+
+This is not yet a complete computer, but it provides the basic architecture required for the later stages of the project.
+
+---
+
+## Overall Progress
+
+The progression of the project has so far been:
+
+    Verilog Basics
+          ↓
+    Sequential Logic
+          ↓
+    Computer Components
+          ↓
+    CPU / SoC Concepts
+          ↓
+    Memory-Mapped I/O
+          ↓
+    GPIO
+          ↓
+    Interrupt Controller
+          ↓
+    Timer
+          ↓
+    Peripheral Integration
+          ↓
+    Linux Preparation
+          ↓
+    FPGA Implementation
+
+The next major goal is to move closer to an actual CPU-based system and eventually prepare the SoC for running software.
+
+---
+
+## Conclusion
+
+This step gave me a much better understanding of what is required to build a computer rather than just individual hardware components.
+
+I now understand the basic purpose of buses, memory-mapped peripherals, GPIO, interrupts and timers.
+
+I also gained experience with system-level simulation and debugging.
+
+The integration is not completely finished, but I now have a clearer understanding of what needs to be solved before the different components can reliably work together.
+
+The next step will be to continue toward the CPU and prepare the system for eventually running software and Linux.
