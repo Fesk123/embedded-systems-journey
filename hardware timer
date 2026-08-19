@@ -532,28 +532,7 @@ The important requirement is that the behavior is consistent and documented.
 
 ## Simulation
 
-The simulation should contain at least:
-
-- "clk"
-- "reset"
-- "enable"
-- "clear"
-- "period"
-- "counter"
-- "irq"
-
-The most important relationship to observe is:
-
-    enable
-       │
-       ▼
-    counter
-       │
-       ▼
-    period comparison
-       │
-       ▼
-      IRQ
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/04-soc-architecture/Hardware%20timer%20simulation.png
 
 ---
 
@@ -694,17 +673,80 @@ This makes debugging easier and ensures that each component is understood before
 
 ## Concepts Learned
 
+- Hardware module integration
+- Top-level modules
+- Inter-module signals
+- Interrupt paths
+- Peripheral-to-controller communication
+- Timer interrupts
+- Interrupt masking
+- System-level simulation
+- Modular hardware design
+- SoC subsystem architecture
+- LSB and MSB
+
 ---
 
 ## Reflection
+
+This project was different from the previous projects because the main goal was not to create a completely new hardware component.
+
+Instead, I connected two components that I had already created.
+
+The Timer generates an interrupt when its counter reaches the configured period. That interrupt is then connected to the Interrupt Controller, which determines whether the interrupt should be allowed to reach the CPU.
+
+This helped me understand that a SoC is not just a collection of individual components. The important part is how those components communicate with each other.
+
+I also learned why keeping modules independent is useful. The Timer does not need to know anything about the Interrupt Controller, and the Interrupt Controller does not need to know how the Timer works internally.
 
 ---
 
 ## Problems
 
+One challenge was connecting the signals correctly between the two modules.
+
+The Timer produces a single interrupt signal, while the Interrupt Controller expects a vector containing multiple interrupt sources.
+
+Therefore, the Timer interrupt had to be connected to one specific bit:
+
+    timer_irq → irq[0]
+
+while the unused interrupt inputs were held inactive.
+
+Another challenge was understanding the difference between the Timer generating an interrupt and the CPU actually receiving an interrupt.
+
+The Timer can generate:
+
+    timer_irq = 1
+
+while the Interrupt Controller can still block it:
+
+    irq_mask[0] = 0
+
+Only when the interrupt is enabled does it reach:
+
+    irq_out = 1
+
+This helped clarify the role of the Interrupt Controller.
+
 ---
 
 ## What I Would Improve
+
+The current integration is intentionally simple.
+
+Possible future improvements include:
+
+- Connect the UART to the Interrupt Controller
+- Connect GPIO interrupts
+- Add a real CPU
+- Add Wishbone configuration
+- Add memory-mapped timer registers
+- Add interrupt acknowledgement
+- Add multiple timer sources
+- Implement more advanced interrupt handling
+
+The eventual system should contain several peripherals using the same Interrupt Controller.
 
 ---
 
@@ -774,3 +816,35 @@ This prevents the entire SoC from becoming difficult to debug.
 ---
 
 ## Next Step
+
+After this integration project is completed, the next step is to continue toward a more complete CPU/SoC architecture.
+
+The system will gradually move toward:
+
+    RISC-V CPU
+         │
+         ▼
+    Wishbone Bus
+         │
+         ├── ROM
+         ├── RAM
+         ├── UART
+         ├── GPIO
+         ├── Timer
+         └── Interrupt Controller
+
+The next projects will begin bringing the hardware components closer together into an actual computer system.
+
+The long-term goal remains:
+
+    FPGA
+      ↓
+    RISC-V SoC
+      ↓
+    Boot software
+      ↓
+    Linux
+      ↓
+    Complete computer
+      ↓
+    Final PCB
