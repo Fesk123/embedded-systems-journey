@@ -1118,6 +1118,8 @@ The simulation should allow the following to be observed:
 
 This makes it possible to verify that the CPU is actually executing instructions correctly.
 
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/RV32I%20Simulation.png
+
 ---
 
 ## Architecture Diagram
@@ -1226,23 +1228,120 @@ The target architecture is:
 
 ---
 
+# Concepts Learned
+
+- Instruction Set Architecture
+- RISC-V
+- RV32I
+- 32-bit registers
+- Register conventions
+- Program Counter
+- Instruction encoding
+- R-type instructions
+- I-type instructions
+- S-type instructions
+- B-type instructions
+- U-type instructions
+- J-type instructions
+- Immediate values
+- Sign extension
+- Load/store architecture
+- Branches
+- Jumps
+- Machine code
+- Assembly
+- Compiler toolchains
+- ISA vs CPU implementation
+
+---
+
 ## Reflection
+
+This project helped me understand RISC-V from the perspective of the instruction set rather than only the hardware implementation.
+
+Since the CPU had already been built, I could connect the RISC-V specification to the hardware components I had already implemented.
+
+For example, the ALU is responsible for many of the arithmetic and logical operations, while the Register File provides the 32 general-purpose registers required by RV32I.
+
+I also learned that an ISA is different from a CPU.
+
+RISC-V defines what instructions must do and how they are represented, while my Verilog implementation determines how those instructions are actually executed internally.
+
+Understanding the different instruction formats was one of the more difficult parts of this project. Some instructions store their immediate values across different parts of the 32-bit instruction, meaning the decoder has to reconstruct them correctly.
+
+This project also made it clear that implementing a RISC-V CPU and creating a processor capable of running Linux are two different levels of complexity.
+
+RV32I provides the foundation, but additional architectural and system-level functionality will be required later.
 
 ---
 
 ## Problems
 
+One of the main challenges was understanding the instruction encoding.
+
+A 32-bit RISC-V instruction contains several different fields, and their meaning depends on the instruction format.
+
+Another challenge was understanding immediate values.
+
+For some instruction types, the immediate value is stored in multiple sections of the instruction and must be reconstructed by the decoder.
+
+Branches are especially important because the branch immediate is not stored as one continuous field.
+
+I also had to distinguish between signed and unsigned operations.
+
+For example:
+
+    SLT
+    SLTU
+
+perform similar comparisons but interpret their operands differently.
+
 ---
 
 ## What I Would Improve
 
----
+The next improvements to the RISC-V implementation would be:
 
-## Current Progress
+- More extensive instruction testing
+- Automated instruction tests
+- Better verification of edge cases
+- More complete exception handling
+- CSR support
+- Interrupt support
+- Privilege modes
+- Better memory interfaces
+- Formal or compliance testing where practical
+
+Only extensions that are actually required by the final software environment should be added.
 
 ---
 
 ## Next Step
+
+RISC-V SoC Integration
+
+The goal will be to combine the RISC-V CPU with the hardware components developed earlier.
+
+The target architecture will become:
+
+                         RISC-V CPU
+                              │
+                              ▼
+                         System Bus
+                              │
+                 ┌────────────┼────────────┐
+                 │            │            │
+                 ▼            ▼            ▼
+                ROM          RAM       Peripherals
+                                           │
+                              ┌────────────┼────────────┐
+                              │            │            │
+                             UART         GPIO         Timer
+                                                          │
+                                                          ▼
+                                                 Interrupt Controller
+
+The focus will then move from understanding the ISA to creating an actual RISC-V based computer system.
 
 ---
 
