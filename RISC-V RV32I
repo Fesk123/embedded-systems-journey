@@ -1,1 +1,1257 @@
+# RISC-V RV32I
 
+## Goal
+
+The goal of this project is to understand the RISC-V instruction set architecture (ISA), specifically the RV32I base integer instruction set.
+
+The main objectives are to understand:
+
+- What an ISA is
+- Why RISC-V is useful
+- The RV32I architecture
+- RISC-V registers
+- Instruction formats
+- Arithmetic instructions
+- Logical instructions
+- Load and store instructions
+- Branch instructions
+- Jump instructions
+- Immediate values
+- The program counter
+- Machine instructions
+- How software is translated into instructions
+- How my CPU executes RISC-V instructions
+
+The long-term goal of the project is to use a RISC-V CPU as the processor inside the final SoC.
+
+---
+
+## What is an ISA?
+
+An Instruction Set Architecture (ISA) defines the interface between software and a processor.
+
+It specifies things such as:
+
+- Which instructions exist
+- Which registers exist
+- How instructions are encoded
+- How memory is accessed
+- How arithmetic operations work
+- How branches and jumps work
+- How exceptions and interrupts are handled
+
+The ISA can therefore be viewed as the contract between software and hardware.
+
+Conceptually:
+
+    Software
+       │
+       │ RISC-V instructions
+       ▼
+    ┌───────────────┐
+    │   RISC-V CPU  │
+    └───────────────┘
+       │
+       ▼
+    Hardware
+
+A compiler can generate RISC-V machine code without needing to know the exact internal implementation of the CPU.
+
+This is one of the important advantages of an ISA.
+
+---
+
+## What is RISC-V?
+
+RISC-V is an open Instruction Set Architecture.
+
+Unlike many traditional processor architectures, the RISC-V ISA is openly specified and can be implemented without requiring a proprietary CPU architecture license.
+
+RISC-V is designed around a modular instruction set.
+
+Instead of defining one enormous instruction set, RISC-V defines a base ISA and optional extensions.
+
+For example:
+
+    RV32I
+      +
+    M
+      +
+    A
+      +
+    F
+      +
+    D
+      +
+    C
+      ...
+
+This allows different processors to implement different combinations of functionality.
+
+---
+
+## Why RISC-V?
+
+RISC-V is particularly suitable for this project because it is:
+
+- Open
+- Well documented
+- Modular
+- Designed for hardware implementations
+- Supported by modern compilers and development tools
+- Suitable for FPGA development
+- Suitable for custom SoCs
+- Available in both 32-bit and 64-bit variants
+
+It also provides a realistic architecture for learning how a modern processor works.
+
+The final computer can therefore use a real standardized ISA rather than a completely custom instruction set.
+
+---
+
+## Why RV32I?
+
+The CPU used in this project is based on RV32I.
+
+RV32 means:
+
+    32-bit registers
+    32-bit address space
+
+The I means:
+
+    Base Integer Instruction Set
+
+RV32I is the basic integer instruction set of RISC-V.
+
+It contains the fundamental instructions needed for a general-purpose processor.
+
+Examples include:
+
+- "ADD"
+- "SUB"
+- "AND"
+- "OR"
+- "XOR"
+- "SLT"
+- "ADDI"
+- "LW"
+- "SW"
+- "BEQ"
+- "BNE"
+- "JAL"
+- "JALR"
+
+RV32I does not include hardware multiplication or division.
+
+Those are provided by the optional "M" extension.
+
+---
+
+## RV32I Architecture
+
+The basic architecture is:
+
+    ┌──────────────────────────────┐
+    │          RISC-V CPU          │
+    │                              │
+    │  Program Counter             │
+    │  Register File               │
+    │  ALU                         │
+    │  Control Unit                │
+    │  Instruction Decoder         │
+    │  Memory Interface            │
+    └──────────────┬───────────────┘
+                   │
+                   ▼
+                 Memory
+
+The CPU fetches instructions from memory, decodes them and executes them.
+
+The basic instruction cycle is:
+
+    Fetch
+      ↓
+    Decode
+      ↓
+    Execute
+      ↓
+    Memory Access
+      ↓
+    Write Back
+      ↓
+    Fetch next instruction
+
+A simple implementation may combine or simplify some of these stages.
+
+---
+
+## RISC-V Registers
+
+RV32I contains 32 general-purpose integer registers.
+
+They are:
+
+    x0
+    x1
+    x2
+    ...
+    x31
+
+Each register is:
+
+    32 bits
+
+Therefore the register file contains:
+
+    32 × 32-bit registers
+
+---
+
+## Register x0
+
+One of the most important RISC-V registers is:
+
+    x0
+
+"x0" is permanently hardwired to zero.
+
+Therefore:
+
+    x0 = 0
+
+A write to "x0" has no effect.
+
+For example:
+
+    ADD x0, x1, x2
+
+does not change "x0".
+
+This is useful because many operations can use "x0" to represent a constant zero.
+
+---
+
+## ABI Register Names
+
+RISC-V also provides conventional ABI names for the registers.
+
+For example:
+
+| Register  | ABI Name | Common Purpose                     |
+|-----------|----------|------------------------------------|
+| "x0"      | "zero"   | Constant zero                      |
+| "x1"      | "ra"     | Return address                     |
+| "x2"      | "sp"     | Stack pointer                      |
+| "x3"      | "gp"     | Global pointer                     |
+| "x4"      | "tp"     | Thread pointer                     |
+| "x5-x7"   | "t0-t2"  | Temporaries                        |
+| "x8-x9"   | "s0-s1"  | Saved registers                    |
+| "x10-x17" | "a0-a7"  | Function arguments / return values |
+| "x18-x27" | "s2-s11" | Saved registers                    |
+| "x28-x31" | "t3-t6"  | Temporaries                        |
+
+The hardware still uses the actual register numbers.
+
+The ABI names are conventions used by software.
+
+---
+
+## Program Counter
+
+The CPU has a Program Counter (PC).
+
+The PC contains the address of the current instruction.
+
+For normal sequential execution:
+
+    PC = PC + 4
+
+because standard RV32I instructions are 32 bits:
+
+    32 bits = 4 bytes
+
+For example:
+
+    PC = 0x00001000
+
+After executing a normal instruction:
+
+    PC = 0x00001004
+
+The PC changes differently for branches and jumps.
+
+---
+
+## Instruction Size
+
+Base RV32I instructions are normally:
+
+    32 bits
+
+or:
+
+    4 bytes
+
+For example:
+
+| Address      | Instruction |
+|--------------|-------------|   
+| 0x00001000   | ADD         |
+| 0x00001004   | SUB         |
+| 0x00001008   | AND         |
+| 0x0000100C   | OR          |
+
+This makes instruction fetching relatively straightforward.
+
+The optional "C" extension introduces compressed 16-bit instructions, but this CPU does not implement that extension.
+
+---
+
+## RISC-V Instruction Formats
+
+RV32I uses several instruction formats.
+
+The main formats are:
+
+- R-type
+- I-type
+- S-type
+- B-type
+- U-type
+- J-type
+
+These formats define how the 32 bits of an instruction are divided into fields.
+
+---
+
+## R-Type
+
+R-type instructions are commonly used for register-to-register operations.
+
+Example:
+
+    ADD x5, x6, x7
+
+The instruction contains:
+
+- funct7
+- rs2
+- rs1
+- funct3
+- rd
+- opcode
+
+Conceptually:
+
+    ┌────────┬───────┬───────┬───────┬───────┬────────┐
+    │ funct7 │  rs2  │  rs1  │ funct3│  rd   │ opcode │
+    │ 31..25 │ 24..20│ 19..15│ 14..12│ 11..7 │  6..0  │
+    └────────┴───────┴───────┴───────┴───────┴────────┘
+
+The CPU's instruction decoder uses these fields to determine which operation should be performed.
+
+---
+
+## I-Type
+
+I-type instructions contain an immediate value.
+
+Examples include:
+
+- ADDI
+- ANDI
+- ORI
+- XORI
+- LW
+- JALR
+
+The general structure is:
+
+    ┌─────────────┬───────┬───────┬───────┬────────┐
+    │  immediate  │  rs1  │ funct3│  rd   │ opcode │
+    │   31..20    │19..15 │14..12 │ 11..7 │  6..0  │
+    └─────────────┴───────┴───────┴───────┴────────┘
+
+The immediate is sign-extended before being used by the CPU.
+
+---
+
+## S-Type
+
+S-type instructions are used for stores.
+
+Example:
+
+    SW x5, 8(x6)
+
+The immediate is split across two parts of the instruction.
+
+Conceptually:
+
+    ┌───────────┬───────┬───────┬────────┬──────────┬────────┐
+    │ imm[11:5] │ rs2   │ rs1   │ funct3 │ imm[4:0] │ opcode │
+    └───────────┴───────┴───────┴────────┴──────────┴────────┘
+
+This allows the CPU to calculate the memory address and store a register value into memory.
+
+---
+
+## B-Type
+
+B-type instructions are used for conditional branches.
+
+Examples:
+
+- BEQ
+- BNE
+- BLT
+- BGE
+- BLTU
+- BGEU
+
+For example:
+
+    BEQ x5, x6, label
+
+The CPU compares two registers.
+
+If the condition is true, the PC changes to the branch target.
+
+Otherwise:
+
+    PC = PC + 4
+
+---
+
+## U-Type
+
+U-type instructions contain a large immediate value.
+
+The main RV32I U-type instructions are:
+
+- LUI
+- AUIPC
+
+These are useful for constructing larger constants and addresses.
+
+---
+
+## J-Type
+
+J-type is used by:
+
+- JAL
+
+Example:
+
+    JAL x1, function
+
+The CPU jumps to another location while storing a return address in the destination register.
+
+This is important for function calls.
+
+---
+
+## RISC-V Instruction Categories
+
+The RV32I instructions implemented by the CPU can be grouped into several categories.
+
+### Arithmetic
+
+- "ADD"
+- "SUB"
+- "ADDI"
+
+### Logical
+
+- "AND"
+- "OR"
+- "XOR"
+- "ANDI"
+- "ORI"
+- "XORI"
+
+### Comparison
+
+- "SLT"
+- "SLTU"
+- "SLTI"
+- "SLTIU"
+
+### Shifts
+
+- "SLL"
+- "SRL"
+- "SRA"
+- "SLLI"
+- "SRLI"
+- "SRAI"
+
+### Loads
+
+- "LB"
+- "LH"
+- "LW"
+- "LBU"
+- "LHU"
+
+### Stores
+
+- "SB"
+- "SH"
+- "SW"
+
+### Branches
+
+- "BEQ"
+- "BNE"
+- "BLT"
+- "BGE"
+- "BLTU"
+- "BGEU"
+
+### Jumps
+
+- "JAL"
+- "JALR"
+
+### Upper Immediate
+
+- "LUI"
+- "AUIPC"
+
+### System
+
+RV32I also defines system instructions such as:
+
+- "ECALL"
+- "EBREAK"
+
+These become particularly important when implementing operating-system support.
+
+---
+
+## Arithmetic Example
+
+Consider:
+
+    ADD x5, x6, x7
+
+The CPU performs:
+
+    x5 = x6 + x7
+
+If:
+
+    x6 = 10
+    x7 = 20
+
+then:
+
+    x5 = 30
+
+The data path is approximately:
+
+    x6 ──┐
+         ├──► ALU ───► x5
+    x7 ──┘
+
+---
+
+## Immediate Example
+
+Consider:
+
+    ADDI x5, x6, 10
+
+The CPU performs:
+
+    x5 = x6 + 10
+
+The immediate value is stored inside the instruction.
+
+The data path becomes:
+
+    x6 ─────────┐
+                ├──► ALU ───► x5
+    immediate ──┘
+
+---
+
+## Load Example
+
+Consider:
+
+    LW x5, 0(x6)
+
+The CPU calculates:
+
+    address = x6 + 0
+
+and loads a 32-bit value from memory:
+
+    memory[address] → x5
+
+The basic path is:
+
+    Register File
+         │
+         ▼
+        ALU
+         │
+         ▼
+      Address
+         │
+         ▼
+       Memory
+         │
+         ▼
+    Register File
+
+---
+
+## Store Example
+
+Consider:
+
+    SW x5, 0(x6)
+
+The CPU calculates:
+
+    address = x6 + 0
+
+and stores:
+
+    x5 → memory[address]
+
+The data path is:
+
+    x6 ──► ALU ──► Memory Address
+                       ▲
+                       │
+                      x5
+
+---
+
+## Branch Example
+
+Consider:
+
+    BEQ x5, x6, label
+
+The CPU compares:
+
+    x5 == x6
+
+If true:
+
+    PC = branch target
+
+If false:
+
+    PC = PC + 4
+
+This means that branches change the normal sequential execution of the program.
+
+---
+
+## Jump Example
+
+Consider:
+
+    JAL x1, function
+
+The CPU:
+
+1. Saves a return address in "x1"
+2. Calculates the target address
+3. Updates the PC
+
+This allows software to call functions.
+
+---
+
+## Immediate Values
+
+RISC-V instructions frequently contain immediate values.
+
+For example:
+
+    ADDI x5, x6, 100
+
+The value:
+
+    100
+
+is part of the instruction.
+
+The CPU's immediate generator extracts the value and sign-extends it to 32 bits.
+
+For example:
+
+    12-bit immediate
+           ↓
+    Sign extension
+           ↓
+    32-bit value
+
+This is an important part of the instruction decoding logic.
+
+---
+
+## Sign Extension
+
+Signed immediate values need to be sign-extended.
+
+For example, a negative 12-bit value must become a negative 32-bit value.
+
+Conceptually:
+
+    12-bit:
+    1111 1111 1111
+
+becomes:
+
+    32-bit:
+    11111111111111111111111111111111
+
+This allows the ALU to correctly perform signed arithmetic.
+
+---
+
+## Instruction Decoder
+
+The instruction decoder determines what operation the CPU should perform.
+
+For example:
+
+    Instruction
+         │
+         ▼
+    Instruction Decoder
+         │
+         ├── opcode
+         ├── funct3
+         ├── funct7
+         ├── rs1
+         ├── rs2
+         └── rd
+
+The decoder generates control signals for the rest of the CPU.
+
+Conceptually:
+
+    Instruction
+         ↓
+    Decoder
+         ↓
+    Control Signals
+         ↓
+    ALU / Registers / Memory / PC
+
+---
+
+## RISC-V and the ALU
+
+The ALU implemented earlier in the project can be used as part of the RISC-V CPU.
+
+For example:
+
+    ADD
+    SUB
+    AND
+    OR
+    XOR
+    SLT
+
+can be implemented using ALU operations.
+
+The RISC-V instruction decoder determines which ALU operation should be selected.
+
+Therefore:
+
+    RISC-V instruction
+          ↓
+    Instruction Decoder
+          ↓
+    ALU Control
+          ↓
+         ALU
+          ↓
+        Result
+
+---
+
+## RISC-V and the Register File
+
+The Register File created earlier is also used by the RISC-V CPU.
+
+The CPU reads:
+
+    rs1
+    rs2
+
+and writes:
+
+    rd
+
+For example:
+
+    ADD x5, x6, x7
+
+means:
+
+    Read x6
+    Read x7
+    Add them
+    Write result to x5
+
+The Register File therefore forms a central part of the CPU datapath.
+
+---
+
+## RISC-V and RAM
+
+The RAM created earlier can eventually be used as the CPU's memory.
+
+The CPU performs:
+
+    Load:
+    Memory → Register
+
+and:
+
+    Store:
+    Register → Memory
+
+This creates the basic relationship:
+
+    RISC-V CPU
+         │
+         ▼
+        RAM
+
+Later, the same concept will be expanded into a complete memory system.
+
+---
+
+## RISC-V and the SoC
+
+The final goal is not just to build a RISC-V CPU.
+
+The CPU will become the central component of the SoC.
+
+The architecture will eventually look like:
+
+                       RISC-V CPU
+                           │
+                           ▼
+                      System Bus
+                           │
+             ┌─────────────┼─────────────┐
+             │             │             │
+             ▼             ▼             ▼
+            RAM           ROM        Peripherals
+                                        │
+                         ┌──────────────┼──────────────┐
+                         │              │              │
+                        UART           GPIO           Timer
+                                                       │
+                                                       ▼
+                                              Interrupt Controller
+                                                       │
+                                                       ▼
+                                                       CPU
+
+This is the architecture that will eventually be implemented on the FPGA.
+
+---
+
+## CPU Instruction Flow
+
+The CPU follows the general process:
+
+    1. PC contains instruction address
+             ↓
+    2. Instruction fetched
+             ↓
+    3. Instruction decoded
+             ↓
+    4. Registers read
+             ↓
+    5. ALU operation performed
+             ↓
+    6. Memory accessed if required
+             ↓
+    7. Result written to register
+             ↓
+    8. PC updated
+
+This repeats for every instruction.
+
+---
+
+## Machine Code
+
+RISC-V assembly instructions are eventually converted into machine code.
+
+For example:
+
+    ADD x5, x6, x7
+
+is encoded as a 32-bit instruction.
+
+The CPU does not directly understand the text:
+
+    ADD x5, x6, x7
+
+Instead, it receives the binary instruction.
+
+The process is:
+
+    RISC-V Assembly
+          ↓
+       Assembler
+          ↓
+    Machine Code
+          ↓
+    Instruction Memory
+          ↓
+       RISC-V CPU
+
+This is how real software eventually reaches the hardware.
+
+---
+
+## Compiler Toolchain
+
+A typical software development flow is:
+
+    C / C++ program
+          ↓
+       Compiler
+          ↓
+    RISC-V Assembly
+          ↓
+       Assembler
+          ↓
+    RISC-V Machine Code
+          ↓
+    Instruction Memory
+          ↓
+       RISC-V CPU
+
+Later in the project, this toolchain will become important when the CPU needs to run actual software.
+
+---
+
+## RV32I and Software
+
+One of the major advantages of using RISC-V is that software can be compiled specifically for the architecture.
+
+For example:
+
+    C program
+       ↓
+    RISC-V compiler
+       ↓
+    RV32I instructions
+       ↓
+    CPU
+
+This means that the CPU does not need a custom compiler.
+
+Instead, existing RISC-V development tools can eventually be used.
+
+---
+
+## Why This Is Important for Linux
+
+The ultimate goal of the project is to create a computer capable of running Linux.
+
+Linux requires a real CPU architecture with a supported software ecosystem.
+
+RISC-V provides this architecture.
+
+The eventual software stack can be thought of as:
+
+    Linux
+      ↓
+    RISC-V software
+      ↓
+    RISC-V ISA
+      ↓
+    RISC-V CPU
+      ↓
+    FPGA / ASIC hardware
+
+The current RV32I CPU is a foundation for understanding this architecture.
+
+A Linux-capable implementation will require significantly more functionality than the simple CPU currently provides.
+
+---
+
+## RV32I vs RV64I
+
+RISC-V also supports 64-bit implementations.
+
+For example:
+
+    RV32I
+        ↓
+    32-bit integer registers
+
+    RV64I
+        ↓
+    64-bit integer registers
+
+RV64I is not simply a completely different architecture.
+
+It extends the base integer architecture to operate with 64-bit registers and introduces additional instructions and behavior.
+
+For this project, RV32I was selected because it is simpler to implement and understand while still representing a real RISC-V architecture.
+
+---
+
+## Why Not RV64I?
+
+The main reason for using RV32I is project complexity.
+
+A 32-bit CPU is sufficient for learning:
+
+- Instruction decoding
+- Register operations
+- Memory access
+- Branches
+- Jumps
+- Software execution
+- SoC architecture
+
+Starting with RV32I also reduces hardware complexity.
+
+Once the architecture is understood, moving toward RV64 becomes much easier.
+
+---
+
+## Extensions
+
+RISC-V uses extensions to add functionality to the base ISA.
+
+Some important extensions include:
+
+    I → Base Integer ISA
+    M → Integer Multiplication and Division
+    A → Atomic Instructions
+    F → Single-Precision Floating Point
+    D → Double-Precision Floating Point
+    C → Compressed Instructions
+
+For example:
+
+    RV32IM
+
+means:
+
+    RV32I + M extension
+
+The current CPU primarily targets:
+
+    RV32I
+
+Additional extensions can be considered later if required by the final system.
+
+---
+
+## Current Limitations
+
+The current CPU is not yet a complete Linux-capable processor.
+
+Important functionality still needs to be developed or verified before attempting to boot Linux.
+
+Potential requirements include:
+
+- More complete memory system
+- Proper interrupt support
+- Exceptions
+- Privilege modes
+- CSR support
+- Timer support
+- Virtual memory
+- Atomic instructions
+- Additional ISA extensions depending on software requirements
+- Boot software
+- Device drivers
+- Larger and more reliable memory system
+
+Therefore, the current RV32I CPU should be viewed as the foundation rather than the final Linux processor.
+
+---
+
+## Simulation
+
+The RISC-V CPU should be tested in simulation before FPGA implementation.
+
+The simulation should allow the following to be observed:
+
+- ADDI
+- ADD
+- SUB
+- AND
+- OR
+- XOR
+- SLL
+- SRL
+- SRA
+- SLT
+- SLTU
+- SW/LW
+- LUI
+- AUIPC
+- BEQ
+- BNE
+- BLT
+- BGE
+- JAL
+- JALR
+- x0
+
+This makes it possible to verify that the CPU is actually executing instructions correctly.
+
+---
+
+## Architecture Diagram
+
+The overall CPU datapath can be represented as:
+
+                 ┌─────────────────┐
+                 │ Program Counter │
+                 └────────┬────────┘
+                          │
+                          ▼
+                 Instruction Memory
+                          │
+                          ▼
+                 ┌─────────────────┐
+                 │ Instruction     │
+                 │ Decoder         │
+                 └───────┬─────────┘
+                         │
+              ┌──────────┴──────────┐
+              │                     │
+              ▼                     ▼
+        Register File              Control
+              │                     │
+              ├─────────┐           │
+              │         │           │
+              ▼         ▼           │
+             rs1       rs2          │
+              │         │           │
+              └────┬────┘           │
+                   ▼                │
+                  ALU ◄─────────────┘
+                   │
+                   ▼
+              Memory Interface
+                   │
+                   ▼
+                 RAM
+
+The actual implementation may combine or rearrange these components.
+
+---
+
+## Relationship to Previous Projects
+
+This project builds directly on components developed earlier.
+
+Previously implemented:
+
+    ALU
+      ↓
+    Register File
+      ↓
+    RAM
+      ↓
+    ROM
+      ↓
+    UART
+      ↓
+    GPIO
+      ↓
+    Memory-Mapped I/O
+      ↓
+    Interrupt Controller
+      ↓
+    Timer
+
+These components can now become parts of a RISC-V based computer.
+
+The RISC-V CPU becomes the central component that controls the system.
+
+---
+
+## Current System Direction
+
+The project is moving from:
+
+    Individual Hardware Components
+
+toward:
+
+    RISC-V CPU
+
+and eventually:
+
+    RISC-V SoC
+
+The target architecture is:
+
+                     RISC-V CPU
+                          │
+                          ▼
+                       Bus
+                          │
+             ┌────────────┼────────────┐
+             │            │            │
+             ▼            ▼            ▼
+            ROM          RAM       Peripherals
+                                      │
+                         ┌────────────┼────────────┐
+                         │            │            │
+                        UART         GPIO         Timer
+                                                   │
+                                                   ▼
+                                          Interrupt Controller
+
+---
+
+## Reflection
+
+---
+
+## Problems
+
+---
+
+## What I Would Improve
+
+---
+
+## Current Progress
+
+---
+
+## Next Step
+
+---
+
+## References
+
+- Bitspinner
+- RISC-V International – RISC-V Specifications
+- RISC-V Unprivileged ISA Specification
+- RISC-V Privileged Architecture Specification
+- Project F – RISC-V Tutorials
+- Nandland – Verilog Tutorials
+- HDLBits
