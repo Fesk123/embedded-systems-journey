@@ -1,0 +1,39 @@
+# AND Gate
+
+## Goal
+- Learn how to create a simple combinational logic module in Verilog.
+
+## Concepts Learned
+
+- module
+- input
+- output
+- wire
+- assign
+
+## Truth Table
+
+| A | B || Y |
+| ---------- |
+| 0 | 0 || 0 |
+| 0 | 1 || 0 |
+| 1 | 0 || 0 |
+| 1 | 1 || 1 |
+
+## Simulation
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/01-verilog-basics/AND-gate%20simulation.png 
+
+## Reflection
+
+This was my first Verilog project, and it helped me understand how hardware description languages differ from traditional programming languages.
+I learned how to define a module, declare inputs and outputs, and use the'assign' statement to describe combinational logic. I also learnt how to verify the design using GTKwave.
+This project gave me a good foundation for more complex cobinational circuits, such as multiplexers and decoders.
+
+## Problems
+
+I had troubles with using GTKwave since it required me to convert my .v-file into a .vvp-file. I also had troubles re-writing my code to work with GTKwave.
+It was hard to swap from the traditional programming mindset into a HDL mindset. So I often mixed up concepts.
+
+## References
+
+- Nandland - Learn Verilog: https://nandland.com/introduction-to-verilog-for-beginners-with-code-examples/

@@ -1,0 +1,46 @@
+# 2-to-4 Decoderå
+
+## Goal
+
+Learn how to implement a 2-to-4 decoder in Verilog and understand how decoders are used to select hardware components based on binary inputs.
+
+## Concepts Learned
+
+- module
+- input
+- output
+- assign
+- combinational logic
+- binary decoding
+- address decoding
+
+## Truth Table
+
+|  A  |  B  |  Y0 |  Y1 |  Y2 |  Y3 |
+| :-: | :-: | :-: | :-: | :-: | :-: |
+|  0  |  0  |  1  |  0  |  0  |  0  |
+|  0  |  1  |  0  |  1  |  0  |  0  |
+|  1  |  0  |  0  |  0  |  1  |  0  |
+|  1  |  1  |  0  |  0  |  0  |  1  |
+
+
+## Simulation
+
+Link: https://github.com/Fesk123/embedded-systems-journey/blob/01-verilog-basics/Decoder%20simulation.png
+
+## Reflection
+
+This challenging project introduced binary decoding and showed how a small number of input bits can uniquely select one of several outputs.
+
+Completing this project marked the end of my introduction to combinational logic in Verilog.
+
+## Problems
+
+No major problems occured during this project.
+
+The main challenge was understanding the purpose of a decoder compared to a demultiplexer. While both activate outputs based on a control signal, the decoder generates unique output patterns directly from binary inputs rather than routing a data signal.
+
+## References
+
+- Nandland – Learn Verilog: https://nandland.com/learn-verilog/
+- https://medium.com/@areeshasoomro031/fpga-design-fundamentals-building-a-2-4-decoder-using-verilog-hdl-2a8b9e96528b

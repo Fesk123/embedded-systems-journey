@@ -1,0 +1,21 @@
+# Roadmap
+
+## Phase 1
+Duration: 1 week
+
+Goal:
+Understand Verilog and simulation.
+
+Topics:
+- module
+- wire
+- always
+- case
+
+Projects:
+- AND gate ✅
+- OR gate ✅
+- XOR gate ✅
+- MUX ✅
+- DEMUX ✅
+- Decoder
