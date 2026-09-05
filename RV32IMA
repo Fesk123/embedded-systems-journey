@@ -827,6 +827,12 @@ REMU by 0
 
 # Simulation
 
+Because of the length of the simulation, multiple images are needed.
+
+I: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/RV32IMA%20I%20simulation.png
+M: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/RV32IMA%20M%20simulation.png
+A: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/RV32IMA%20A%20simulation.png
+
 ---
 
 # Verification Strategy
@@ -994,14 +1000,53 @@ These will be addressed in later projects.
 
 # Problems
 
+No major problems occurred during this project.
+
 ---
 
 # Reflection
+
+This project extends the processor from the RV32I base ISA to a significantly more capable architecture.
+
+The M extension primarily affects the arithmetic datapath, while the A extension also affects the relationship between the CPU and memory system.
+
+One important lesson from this project is that extending a CPU is not simply a matter of adding more ALU operations. New instructions can introduce requirements in other parts of the architecture, especially when they interact with memory.
+
+The A extension is particularly important because atomic operations are designed for synchronization and concurrent software.
+
+This project also demonstrates why understanding the ISA before integrating the CPU into a larger SoC is useful. The processor interface and memory behavior need to be understood before connecting it to the system bus and peripherals.
 
 ---
 
 # Next Step
 
+After completing RV32IMA, the next project is:
+
+RISC-V SoC Integration
+
+The finished RV32IMA CPU will be connected to the existing system components:
+
+RV32IMA CPU
+     │
+     ▼
+System Bus / Interconnect
+     │
+     ├── ROM
+     ├── RAM
+     ├── UART
+     ├── GPIO
+     ├── Timer
+     └── Interrupt Controller
+
+The objective is to move from:
+
+RV32IMA CPU + separate components
+
+to:
+
+Complete RISC-V SoC
+
+This will provide the foundation for the later Linux-preparation stages.
 
 # References
 
