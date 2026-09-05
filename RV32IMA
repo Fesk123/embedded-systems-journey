@@ -1,1 +1,1018 @@
+# RV32IMA
 
+## Goal
+
+The goal of this project is to understand and verify the RV32IMA RISC-V instruction set architecture and extend the existing RV32I CPU toward an RV32IMA-compatible processor.
+
+The previous project established the RV32I base ISA. This project adds:
+
+- M: Integer Multiplication and Division
+- A: Atomic Instructions
+
+---
+
+## Overview
+
+RISC-V is a modular instruction set architecture.
+
+Instead of defining one large instruction set, RISC-V consists of a base ISA combined with optional extensions.
+
+The processor developed in this project targets:
+
+RV32IMA
+
+Which consists of:
+
+RV32I
++ M
++ A
+
+Where:
+
+| Extension | Meaning         | Purpose                             |
+|-----------|-----------------|-------------------------------------|
+| I         | Integer         | Base integer instruction set        |
+| M         | Multiply/Divide | Integer multiplication and division |
+| A         | Atomic          | Atomic memory operations            |
+
+The existing CPU already implements the RV32I base architecture.
+
+This project investigates the additional M and A extensions required to move toward RV32IMA.
+
+---
+
+# Why RV32IMA?
+
+The final goal of this project is to build a custom SoC capable of running increasingly complex software, eventually targeting Linux.
+
+A simple RV32I processor is useful for learning and bare-metal programs, but the Linux target requires a more complete RISC-V ISA and software environment.
+
+For this reason, the project target is RV32IMA rather than stopping at RV32I.
+
+The intention is to establish the processor architecture before starting the larger SoC integration.
+
+---
+
+# Relationship to the Previous RV32I Project
+
+The previous project established the following architecture:
+
+
+RV32I
+│
+├── Integer arithmetic
+├── Logical operations
+├── Shifts
+├── Comparisons
+├── Loads
+├── Stores
+├── Branches
+├── Jumps
+└── Immediate instructions
+
+
+RV32IMA extends this:
+
+
+RV32IMA
+│
+├── RV32I
+│
+├── M
+│   ├── MUL
+│   ├── MULH
+│   ├── MULHSU
+│   ├── MULHU
+│   ├── DIV
+│   ├── DIVU
+│   ├── REM
+│   └── REMU
+│
+└── A
+    ├── LR.W
+    ├── SC.W
+    ├── AMOSWAP.W
+    ├── AMOADD.W
+    ├── AMOXOR.W
+    ├── AMOAND.W
+    ├── AMOOR.W
+    ├── AMOMIN.W
+    ├── AMOMAX.W
+    ├── AMOMINU.W
+    └── AMOMAXU.W
+
+
+---
+
+# M Extension
+
+## What is the M Extension?
+
+The M extension adds integer multiplication and division instructions.
+
+The RV32I ALU can perform operations such as:
+
+
+- ADD
+- SUB
+-AND
+- OR
+- XOR
+- SHIFT
+- COMPARE
+
+
+but multiplication and division are not part of RV32I.
+
+The M extension adds these operations.
+
+---
+
+# M Instructions
+
+The M extension contains eight main instructions.
+
+| Instruction | Operation                          |
+|-------------|------------------------------------|
+| MUL         | Signed × signed, lower 32 bits     |
+| MULH        | Signed × signed, upper 32 bits     |
+| MULHSU      | Signed × unsigned, upper 32 bits   |
+| MULHU       | Unsigned × unsigned, upper 32 bits |
+| DIV         | Signed division                    |
+| DIVU        | Unsigned division                  |
+| REM         | Signed remainder                   |
+| REMU        | Unsigned remainder                 |
+
+---
+
+# MUL
+
+"MUL" performs a 32-bit integer multiplication.
+
+Example:
+
+assembly
+li x5, 6
+li x6, 7
+mul x7, x5, x6
+
+
+Result:
+
+x7 = 42
+
+The multiplication of two 32-bit numbers produces up to a 64-bit result.
+
+"MUL" returns the lower 32 bits.
+
+
+64-bit multiplication result
+┌───────────────────────┬───────────────────────┐
+│       upper 32        │       lower 32        │
+└───────────────────────┴───────────────────────┘
+                            ▲
+                            │
+                           MUL
+
+
+---
+
+# High Multiplication Instructions
+
+The other multiplication instructions return the upper 32 bits of the 64-bit multiplication result.
+
+
+MULH
+
+
+Signed × signed.
+
+
+MULHSU
+
+
+Signed × unsigned.
+
+
+MULHU
+
+
+Unsigned × unsigned.
+
+These instructions are useful when software needs the complete multiplication result.
+
+---
+
+# Division
+
+The M extension also provides integer division.
+
+## DIV
+
+Signed division.
+
+Example:
+
+assembly
+li x5, 20
+li x6, 4
+div x7, x5, x6
+
+
+Result:
+
+x7 = 5
+
+---
+
+## DIVU
+
+Unsigned division.
+
+The difference between:
+
+DIV
+DIVU
+
+is how the operands are interpreted.
+
+DIV  → signed
+DIVU → unsigned
+
+---
+
+# Remainder
+
+The M extension also provides remainder instructions.
+
+REM
+REMU
+
+Example:
+
+20 / 6 = 3 remainder 2
+
+Therefore:
+
+DIV → 3
+REM → 2
+
+"REM" operates on signed integers, while "REMU" operates on unsigned integers.
+
+---
+
+# M Extension Hardware
+
+Adding the M extension requires more than simply adding new instruction encodings.
+
+The CPU needs hardware capable of performing:
+
+- multiplication
+- division
+- remainder
+
+A simple implementation can use Verilog arithmetic operators.
+
+For example:
+
+result = operand_a  operand_b;
+
+and:
+
+result = operand_a / operand_b;
+
+A conceptual architecture is:
+
+
+             ┌───────────────┐
+             │      ALU      │
+             ├───────────────┤
+             │ ADD           │
+             │ SUB           │
+             │ AND           │
+             │ OR            │
+             │ XOR           │
+             │ SHIFT         │
+             │ COMPARE       │
+             └───────┬───────┘
+                     │
+                     ▼
+             ┌───────────────┐
+             │ M Extension   │
+             ├───────────────┤
+             │ MUL           │
+             │ MULH          │
+             │ MULHSU        │
+             │ MULHU         │
+             │ DIV           │
+             │ DIVU          │
+             │ REM           │
+             │ REMU          │
+             └───────────────┘
+
+
+A more advanced implementation could use dedicated multiplier/divider units or multi-cycle operations.
+
+---
+
+# Combinational vs Multi-Cycle M Extension
+
+There are two general implementation approaches.
+
+## Simple Implementation
+
+The multiplication and division operations can be performed directly using Verilog arithmetic operators.
+
+For example:
+
+verilog
+result = operand_a  operand_b;
+
+This is simple and useful for an educational CPU.
+
+However, multiplication and especially division can create relatively large hardware or long timing paths.
+
+---
+
+## Multi-Cycle Implementation
+
+A more advanced CPU can perform multiplication or division over several clock cycles.
+
+For example:
+
+Cycle 1
+Start operation
+      ↓
+Cycle 2
+Process
+      ↓
+Cycle 3
+Process
+      ↓
+Cycle 4
+Final result
+
+This can reduce the combinational complexity of the design, but requires additional control logic and CPU states.
+
+For this project, the simplest correct implementation should be preferred initially.
+
+Optimization can be considered later if FPGA timing or resource usage becomes a problem.
+
+---
+
+# A Extension
+
+## What is the A Extension?
+
+The A extension adds atomic memory operations.
+
+Atomic operations are operations that can safely modify shared memory without another processor or hardware agent observing an intermediate state.
+
+They are important for:
+
+- Operating systems
+- Synchronization
+- Mutexes
+- Spinlocks
+- Concurrent software
+- Multi-core systems
+- Shared memory
+
+The A extension therefore interacts with more than just the ALU.
+
+It also affects the memory system.
+
+---
+
+# Why Atomic Operations Matter
+
+Consider a shared variable:
+
+counter = 10
+
+Two processors attempt:
+
+counter = counter + 1
+
+Without an atomic operation, this can happen:
+
+CPU 1 reads 10
+CPU 2 reads 10
+
+CPU 1 calculates 11
+CPU 2 calculates 11
+
+CPU 1 writes 11
+CPU 2 writes 11
+
+The expected result was:
+
+12
+
+but the actual result becomes:
+
+11
+
+Atomic operations prevent this type of race condition.
+
+---
+
+# Load-Reserved / Store-Conditional
+
+Two important A-extension instructions are:
+
+LR.W
+SC.W
+
+They are used together to implement atomic operations.
+
+---
+
+# LR.W
+
+"LR.W" means:
+
+Load Reserved Word
+
+It loads a value from memory and establishes a reservation on that memory location.
+
+Conceptually:
+
+Memory
+  │
+  │ LR.W
+  ▼
+Register
+  │
+  └── Reservation established
+
+The processor must remember the address associated with the reservation.
+
+---
+
+# SC.W
+
+"SC.W" means:
+
+Store Conditional Word
+
+It attempts to store a value to a memory location.
+
+The store succeeds only if the reservation is still valid.
+
+The instruction returns a status value:
+
+0 → success
+non-zero → failure
+
+---
+
+# LR/SC Example
+
+A simplified atomic increment can be implemented conceptually as:
+
+assembly
+retry:
+    lr.w  t0, (a0)
+    addi  t0, t0, 1
+    sc.w  t1, t0, (a0)
+    bnez  t1, retry
+
+The basic process is:
+
+       ┌──────────────┐
+       │ Load value   │
+       │   LR.W       │
+       └──────┬───────┘
+              │
+              ▼
+       ┌──────────────┐
+       │ Modify value │
+       └──────┬───────┘
+              │
+              ▼
+       ┌──────────────┐
+       │ Store value  │
+       │   SC.W       │
+       └──────┬───────┘
+              │
+        ┌─────┴─────┐
+        │           │
+     Success      Failure
+        │           │
+        ▼           └──────► Retry
+
+---
+
+# AMO Instructions
+
+The A extension also contains Atomic Memory Operation instructions.
+
+These combine:
+
+read
+modify
+write
+
+into one atomic memory operation.
+
+Examples include:
+
+- AMOSWAP.W
+- AMOADD.W
+- AMOXOR.W
+- AMOAND.W
+- AMOOR.W
+- AMOMIN.W
+- AMOMAX.W
+- AMOMINU.W
+- AMOMAXU.W
+
+---
+
+# AMOADD.W
+
+"AMOADD.W" performs an atomic addition.
+
+Conceptually:
+
+old_value = memory[address]
+memory[address] = old_value + register_value
+destination = old_value
+
+The entire read-modify-write operation is atomic.
+
+---
+
+# A Extension Hardware
+
+Unlike the M extension, the A extension cannot simply be implemented as another ALU operation.
+
+It requires interaction with the memory subsystem.
+
+Conceptually:
+
+                 CPU
+                  │
+                  ▼
+             ┌─────────┐
+             │   ALU   │
+             └────┬────┘
+                  │
+                  ▼
+           ┌─────────────┐
+           │ Memory Unit │
+           └──────┬──────┘
+                  │
+                  ▼
+                Memory
+
+The memory unit must be capable of handling atomic accesses.
+
+For the current single-core educational SoC, the implementation can initially be simplified because there is no second CPU competing for the same memory.
+
+However, the architectural behavior of the instructions must still be implemented correctly.
+
+---
+
+# Reservation Tracking
+
+The "LR.W" / "SC.W" mechanism requires the processor to remember the address associated with the reservation.
+
+Conceptually:
+
+verilog
+logic reservation_valid;
+logic [31:0] reservation_address;
+
+After "LR.W":
+
+reservation_valid   = 1
+reservation_address = address
+
+Then "SC.W" checks whether the reservation is still valid for the requested address.
+
+Conceptually:
+
+verilog
+if (
+    reservation_valid &&
+    reservation_address == address
+)
+
+If valid:
+
+store succeeds
+return 0
+
+Otherwise:
+
+store fails
+return non-zero
+
+The complete reservation behavior must follow the RISC-V specification.
+
+---
+
+# Instruction Encoding
+
+The M extension uses the R-type instruction format.
+
+Conceptually:
+
+
+┌─────────┬─────┬─────┬───────┬─────┬─────────┐
+│ funct7  │ rs2 │ rs1 │ funct3│  rd │ opcode  │
+└─────────┴─────┴─────┴───────┴─────┴─────────┘
+
+The CPU therefore needs to distinguish M-extension instructions during instruction decoding.
+
+The decoder should identify:
+
+- opcode
+- funct3
+- funct7
+
+and select the appropriate operation.
+
+The A extension uses its own instruction encodings and must similarly be decoded according to the RISC-V ISA specification.
+
+---
+
+# CPU Changes
+
+The existing RV32I CPU should be extended rather than rebuilt.
+
+The main areas that may require changes are:
+
+
+Instruction Decoder
+        │
+        ▼
+   Control Logic
+        │
+        ├───────────────┐
+        ▼               ▼
+    M Extension     A Extension
+        │               │
+        ▼               ▼
+ Arithmetic Unit    Memory Unit
+        │               │
+        └───────┬───────┘
+                ▼
+          Register File
+
+
+---
+
+# Required CPU Changes
+
+## 1. Instruction Decoder
+
+The decoder must recognize the new instructions.
+
+For M:
+
+- MUL
+- MULH
+- MULHSU
+- MULHU
+- DIV
+- DIVU
+- REM
+- REMU
+
+For A:
+
+- LR.W
+- SC.W
+- AMOSWAP.W
+- AMOADD.W
+- AMOXOR.W
+- AMOAND.W
+- AMOOR.W
+- AMOMIN.W
+- AMOMAX.W
+- AMOMINU.W
+- AMOMAXU.W
+
+---
+
+## 2. ALU / Arithmetic Unit
+
+The arithmetic datapath needs to support:
+
+- multiply
+- divide
+- remainder
+
+The existing ALU can remain responsible for the RV32I operations.
+
+The M extension can be added as an additional execution unit or integrated into the existing ALU.
+
+---
+
+## 3. Memory Unit
+
+The memory system must support the A-extension operations.
+
+The existing load/store mechanism can be extended to recognize:
+
+LR.W
+SC.W
+AMO
+
+---
+
+## 4. Control Logic
+
+The control unit must handle the new execution paths.
+
+For example:
+
+
+Instruction
+     │
+     ▼
+   Decode
+     │
+     ├── RV32I ──► Normal execution
+     │
+     ├── M ──────► Arithmetic execution
+     │
+     └── A ──────► Atomic memory execution
+
+
+---
+
+# Verification
+
+The RV32IMA implementation should be verified using simulation before being integrated into the SoC.
+
+The tests should cover both extensions independently.
+
+---
+
+# M Extension Tests
+
+## MUL
+
+Test:
+
+6 × 7 = 42
+
+Expected:
+
+x_result = 42
+
+---
+
+## Signed Multiplication
+
+Test positive and negative values.
+
+Example:
+
+-6 × 7 = -42
+
+The result should be correctly represented using two's complement.
+
+---
+
+## Unsigned Multiplication
+
+Test values where signed and unsigned interpretations differ.
+
+This is particularly important for:
+
+
+MULHU
+
+and:
+
+MULHSU
+
+---
+
+## Division
+
+Test:
+
+20 / 4 = 5
+
+---
+
+## Remainder
+
+Test:
+
+20 % 6 = 2
+
+---
+
+## Divide by Zero
+
+The RISC-V specification defines specific behavior for division by zero.
+
+This case must therefore be tested explicitly rather than relying on Verilog's default behavior.
+
+Tests should include:
+
+DIV by 0
+DIVU by 0
+REM by 0
+REMU by 0
+
+---
+
+# Simulation
+
+---
+
+# Verification Strategy
+
+The implementation should be tested in stages.
+
+## Stage 1: M Extension
+
+Verify:
+
+- MUL
+- MULH
+- MULHSU
+- MULHU
+- DIV
+- DIVU
+- REM
+- REMU
+
+before continuing.
+
+---
+
+## Stage 2: A Extension
+
+Verify:
+
+- LR.W
+- SC.W
+- AMO
+
+
+independently.
+
+---
+
+# RV32IMA SoC Direction
+
+The final architecture will eventually look more like:
+
+
+                         RV32IMA CPU
+                              │
+                              ▼
+                        System Bus
+                              │
+             ┌────────────────┼────────────────┐
+             │                │                │
+             ▼                ▼                ▼
+            ROM              RAM          Peripherals
+                                              │
+                              ┌───────────────┼───────────────┐
+                              │               │               │
+                             UART            GPIO            Timer
+                                                              │
+                                                              ▼
+                                                     Interrupt Controller
+                                                              │
+                                                              ▼
+                                                             CPU
+
+
+This will be implemented in the following SoC integration project.
+
+---
+
+# RV32IMA vs RV32I
+
+| Feature                              | RV32I | RV32IMA |
+| ------------------------------------ | ----: | ------: |
+| 32-bit registers                     |     Y |       Y |
+| Integer arithmetic                   |     Y |       Y |
+| Loads/stores                         |     Y |       Y |
+| Branches                             |     Y |       Y |
+| Multiplication                       |     N |       Y |
+| Division                             |     N |       Y |
+| Remainder                            |     N |       Y |
+| Atomic memory operations             |     N |       Y |
+| Target architecture for this project |  Base |       Y |
+
+---
+
+# Important Design Decision
+
+The goal of this project is not to make the CPU as complicated as possible.
+
+The goal is to create a processor that is:
+
+Understandable
+      +
+Verifiable
+      +
+Synthesizable
+      +
+Compatible with the intended software environment
+
+The implementation should therefore start with the simplest correct hardware.
+
+Optimization can be performed later if timing or resource usage becomes a problem on the FPGA.
+
+---
+
+# Linux Considerations
+
+RV32IMA is an important step toward the Linux target, but it is not by itself enough to run Linux.
+
+A Linux-capable system also requires things such as:
+
+- CPU
+- Memory
+- Boot process
+- Interrupt support
+- Timer
+- UART / console
+- Memory map
+- Software toolchain
+ -Device support
+- Operating-system support
+
+Therefore:
+
+RV32IMA ≠ Linux
+
+Instead:
+
+RV32IMA
+   │
+   ▼
+SoC
+   │
+   ▼
+Boot software
+   │
+   ▼
+Bare-metal software
+   │
+   ▼
+Linux-capable platform
+
+
+The exact Linux ISA requirements should also be verified against the specific Linux configuration and software stack used later in the project.
+
+---
+
+# Limitations
+
+At this stage, the processor may still not be capable of running Linux.
+
+The main remaining system-level requirements include:
+
+- Complete SoC integration
+- Memory-mapped peripherals
+- Interrupt handling
+- Timer functionality
+- Boot ROM
+- Software toolchain
+- Linker configuration
+- Appropriate memory layout
+- UART console
+- Linux-compatible platform support
+
+These will be addressed in later projects.
+
+---
+
+# Problems
+
+---
+
+# Reflection
+
+---
+
+# Next Step
+
+
+# References
+
+ RISC-V International - RISC-V Specifications: https://riscv.org/technical/specifications/https://riscv.org/technical/specifications/
+
+ RISC-V Unprivileged ISA Specification: https://docs.riscv.org/reference/isa/unpriv/https://docs.riscv.org/reference/isa/unpriv/
+
+ RISC-V International - ISA Specifications: https://riscv.org/specifications/https://riscv.org/specifications/
+
+ Bitspinner: https://www.bit-spinner.com/
+
+ Project F - RISC-V Tutorials: https://projectf.io/posts/risc-v/https://projectf.io/posts/risc-v/
+
+ Nandland - Verilog Tutorials: https://nandland.com/https://nandland.com/
