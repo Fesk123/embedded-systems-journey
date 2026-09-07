@@ -85,14 +85,35 @@ This could make the transition from RV32IMA toward a future RV64 implementation 
 
 ---
 
+# Simulation
+
+The project was simulated using the previous testbench, and passed successfully.
+
+And because the simulation was conducted using the previous testbench and recieved identical results, I therefore did not add them as documentation.
+
+---
+
 # Problems
+
+No major problem occured during this project.
+
+One of the main challenges is determining which values should actually remain fixed at 32 bits and which represent the processor's XLEN.
 
 ---
 
 # Reflection
 
----
+Parameterizing the CPU separates the processor's architecture from a specific datapath width.
 
+The CPU is still an RV32IMA processor in this stage, but the design is no longer unnecessarily dependent on hard coded 32-bit datapaths.
+
+This also provides a useful foundation for later microarchitectural improvements. The next stages will change how the CPU executes instructions internally without changing the RV32IMA ISA.
+
+The parameterization is also potentially valuable if the project is extended in the future. A wider XLEN could provide a starting point for experimenting with an RV64 implementation and, eventually, possibly an RV64GC processor.
+
+However, the immediate goal remains to create a correct and well-tested RV32IMA processor, not to prematurely optimize the design for RV64GC.
+
+---
 
 # What's Next
 
