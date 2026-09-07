@@ -1020,33 +1020,15 @@ This project also demonstrates why understanding the ISA before integrating the 
 
 # Next Step
 
-After completing RV32IMA, the next project is:
+The next step is to improve the microarchitecture of the RV32IMA CPU while keeping the ISA unchanged.
 
-RISC-V SoC Integration
+The CPU will first be parameterized using an "XLEN" parameter. This will make the datapath independent of a fixed 32-bit width while keeping the current instruction width at 32 bits.
 
-The finished RV32IMA CPU will be connected to the existing system components:
-
-RV32IMA CPU
-     │
-     ▼
-System Bus / Interconnect
-     │
-     ├── ROM
-     ├── RAM
-     ├── UART
-     ├── GPIO
-     ├── Timer
-     └── Interrupt Controller
-
-The objective is to move from:
-
-RV32IMA CPU + separate components
-
-to:
-
-Complete RISC-V SoC
-
-This will provide the foundation for the later Linux-preparation stages.
+Parameterized RV32IMA
+   - Introduce XLEN = 32
+   - Replace hard-coded datapath widths
+   - Parameterize the register file, PC, ALU, immediates, M-extension, A-extension, write-back path, data path, reservation address and debug signals
+   - Verify that XLEN=32 behaves identically to the current RV32IMA implementation
 
 # References
 
