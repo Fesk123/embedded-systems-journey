@@ -1,1 +1,107 @@
+# RV32IMA Microarchitecture – Parameterization
 
+## Goal
+
+The goal of this project is to make the existing RV32IMA CPU parameterized, without changing its current functionality.
+
+The CPU currently operates with a 32-bit datapath. Instead of hard-coding "32" throughout the design, the datapath will use an "XLEN" parameter.
+
+The initial configuration will remain:
+
+XLEN = 32
+
+This project is not intended to create an RV64 CPU yet. The purpose is to make the current RV32IMA implementation more flexible and to potentially make a future expansion to RV64GC easier if there is enough time later in the project.
+
+---
+
+## Why Parameterize the CPU?
+
+A large part of the current CPU is specifically written around 32-bit values.
+
+For example:
+
+logic [31:0] pc;
+logic [31:0] alu_result;
+logic [31:0] rs1_data;
+logic [31:0] rs2_data;
+
+
+This works for RV32IMA, but makes future changes to a wider architecture more difficult.
+
+Instead, the CPU will use:
+
+parameter XLEN = 32;
+
+and widths will be derived from "XLEN":
+
+logic [XLEN-1:0] pc;
+logic [XLEN-1:0] alu_result;
+logic [XLEN-1:0] rs1_data;
+logic [XLEN-1:0] rs2_data;
+
+The CPU will therefore still behave exactly as an RV32IMA processor when:
+
+XLEN = 32
+
+---
+
+## Important Design Choice
+
+The instruction width will remain 32 bits in this project.
+
+The distinction is:
+
+XLEN = 32
+Instruction width = 32
+
+"XLEN" describes the processor's register and datapath width, while the instruction width describes the size of the instructions currently supported by the CPU.
+
+A future RV64 implementation would therefore potentially use:
+
+XLEN = 64
+Instruction width = 32
+
+while a future implementation supporting the RISC-V Compressed extension would require additional instruction-fetch and decode changes.
+
+Those changes are outside the scope of this project.
+
+---
+
+# Future RV64GC Possibility
+
+The purpose of this parameterization is not to implement RV64GC now.
+
+Instead, it is an architectural preparation for the possibility of extending the processor later.
+
+A future RV64 configuration could potentially start from:
+
+XLEN = 64
+
+instead of:
+
+XLEN = 32
+
+This could make the transition from RV32IMA toward a future RV64 implementation significantly easier than if the entire CPU were built around hard coded 32-bit signals.
+
+---
+
+# Problems
+
+---
+
+# Reflection
+
+---
+
+
+# What's Next
+
+After parameterization is complete, the next project will focus on changing the CPU's microarchitecture.
+
+The next step is:
+
+RV32IMA Microarchitecture
+
+The CPU will first be developed into a multi-cycle architecture, allowing hardware such as the ALU to be reused across multiple clock cycles.
+
+This will prepare the processor for the later 5-stage pipeline implementation.
