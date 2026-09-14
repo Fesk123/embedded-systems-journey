@@ -1,1 +1,785 @@
+# Multi-cycle RV32IMA
 
+## Goal
+
+The goal of this project is to change the internal microarchitecture of the existing parameterized RV32IMA CPU from a single-cycle design into a multi-cycle CPU.
+
+The ISA will remain unchanged.
+
+The processor will still implement:
+
+RV32I
+
+ +
+
+RV32M
+
+ +
+
+RV32A
+
+The main difference is that an instruction will no longer need to complete all of its operations within a single clock cycle.
+
+Instaed, instruction execution will be divided into multiple states:
+
+FETCH → DECODE → EXECUTE → MEMORY → WRITEBACK
+
+Not every instruction needs to use every state. For example, an R-type arithmetic instruction may not need a memory state.
+
+
+# Why Multi-cycle?
+
+In a single-cycle CPU, an instruction must complete all of its required work before the next clock edge.
+
+Conceptually:
+
+FETCH
+
+  ↓
+
+DECODE
+
+  ↓
+
+EXECUTE
+
+  ↓
+
+MEMORY
+
+  ↓
+
+WRITEBACK
+
+  ↓
+
+One clock cycle
+
+This means the clock period must be long enough for the slowest instruction to complete (critical path).
+
+A multi-cycle CPU instead divides the work across several clock cycles:
+
+Cycle 1: FETCH
+
+Cycle 2: DECODE
+
+Cycle 3: EXECUTE
+
+Cycle 4: MEMORY
+
+Cycle 5: WRITEBACK
+
+Different instructions can therefore take different numbers of cycles.
+
+For example:
+
+ADD
+
+FETCH
+
+  ↓
+
+DECODE
+
+  ↓
+
+EXECUTE
+
+
+while:
+
+LW
+
+FETCH
+
+  ↓
+
+DECODE
+
+  ↓
+
+EXECUTE
+
+  ↓
+
+MEMORY
+
+  ↓
+
+WRITEBACK
+
+
+# Main Objectives
+
+The multi-cycle implementation should:
+
+- Keep the RV32IMA ISA unchanged
+- Keep the existing instruction behavior.
+- Reuse hardware between cycles.
+- Separate instruction execution into multiple clocked states
+- Introduce a control state machine
+- Store intermediate values in registers.
+- Prepare the CPU architecture for a later pipeline implementation
+- The existing parameterization using XLEN must be preserved.
+
+The initial configuration remains:
+
+XLEN = 32
+
+
+# Architecture
+
+The basic multi-cycle architecture will be:
+
+                    +----------------+
+
+                    |      PC        |
+
+                    +-------+--------+
+
+                            |
+
+                            v
+
+                    +---------------+
+
+                    | Instruction   |
+
+                    |     Memory    |
+
+                    +-------+-------+
+
+                            |
+
+                            v
+
+                    +---------------+
+
+                    | Instruction   |
+
+                    |    Register   |
+
+                    +-------+-------+
+
+                            |
+
+                            v
+
+                    +---------------+
+
+                    |    Decode     |
+
+                    +-------+-------+
+
+                            |
+
+             +--------------+--------------+
+
+             |                             |
+
+             v                             v
+
+      +-------------+               +-------------+
+
+      | Register    |               | Imediate    |
+
+      |    File     |               | Generator   |
+
+      +------+------+               +------+------+
+
+             |                             |
+
+             +--------------+--------------+
+
+                            |
+
+                            v
+
+                     +-------------+
+
+                     |     ALU     |
+
+                     +------+------+ 
+
+                            |
+
+                +-----------+-----------+
+
+                |                       |
+
+                v                       v
+
+         +-------------+         +-------------+
+
+         | ALU Result  |         | Memory Data |
+
+         |   Register  |         |   Register  |
+
+         +-------------+         +-------------+
+
+                |
+
+                v
+
+         +-------------+
+
+         | Write-back  |
+
+         +-------------+
+
+The exact implementation may differ, but the important principle is that intermediate results are stored between clock cycles.
+
+
+# Control State Machine
+
+A central part of the multi-cycle CPU is a finite state machine (FSM) controlling the processor.
+
+A basic state structure is:
+
+             +--------+
+
+             | FETCH  |
+
+             +---+----+
+
+                 |
+
+                 v
+
+             +--------+
+
+             | DECODE |
+
+             +---+----+
+
+                 |
+
+       +---------+---------+
+
+       |         |         |
+
+       v         v         v
+
+   EXECUTE    MEMORY    WRITEBACK
+
+       |         |         ^
+
+       |         |         |
+
+       +---------+---------+
+
+The exact state transitions depend on the instruction type.
+
+
+# Suggested States
+
+The CPU can use states such as:
+
+- FETCH
+- DECODE
+
+- EXECUTE_R
+- EXECUTE_I
+- EXECUTE_BRANCH
+- EXECUTE_LOAD_STORE
+- EXECUTE_JUMP
+- EXECUTE_M
+
+- MEMORY_READ
+- MEMORY_WRITE
+
+- WRITEBACK_ALU
+- WRITEBACK_LOAD
+- WRITEBACK_M
+- WRITEBACK_A
+
+The exact number of states does not have to be fixed.
+
+The goal is to create a clean control structure rather than optimize the number of states prematurely.
+
+
+# FETCH
+
+The FETCH state obtains the next instruction.
+
+Typical operations are:
+
+Instruction Memory[PC]
+
+        ↓
+
+Instruction Register
+
+and:
+
+PC = PC + 4
+
+The instruction is stored in a Instruction Register (IR) so that it remains available during later cycles.
+
+Conceptually:
+
+IR <= instruction_memory[PC]
+
+PC <= PC + 4
+
+The PC update should continue to use the parameterized XLEN datapath.
+
+
+# DECODE
+
+During DECODE, the instruction is interpreted.
+
+The CPU determines:
+
+- Opcode
+- rd
+- rs1
+- rs2
+- funct3
+- funct7
+- Immediate type
+- Instruction category
+
+Register values can be loaded into temporary registers:
+
+A <= Register[rs1]
+
+B <= Register[rs2]
+
+The immediate generator produces the apropriate XLEN-wide immediate.
+
+
+# Intermediate Registers
+
+Unlike a single-cycle CPU, values must remain available between clock cycles.
+
+The multi-cycle CPU should therefore introduce registers such as:
+
+Instruction Register - IR
+Stores the currently executing instruction.
+
+ALU Result Register - ALUOut
+Stores the result of an ALU operation.
+
+Memory Data Register - MDR
+Stores data read from memory.
+
+Register A - A
+Stores the value read from rs1.
+
+Register B - B
+Stores the value read from rs2.
+
+These registers allow the same hardware to be reused during later cycles.
+
+
+# ALU Reuse
+
+One of the main reasons for implementing a multi-cycle architecture is to reuse hardware.
+
+The same ALU can perform different operations in different cycles.
+
+For example:
+
+ADD
+
+ ↓
+
+ALU
+
+ ↓
+
+result
+
+The same ALU can later calculate:
+
+Branch target
+
+or:
+
+Load/store address
+
+or:
+
+PC + 4
+
+depending on the current state and control signals.
+
+Conceptually:
+
+                 +-------------+
+
+                 |             |
+
+        A ------>|             |
+
+                 |     ALU     |----> ALUOut
+
+        B ------>|             |
+
+                 |             |
+
+       PC ------>|             |
+
+                 +-------------+
+
+The control FSM determines which values are sent to the ALU during each state.
+
+
+# Instruction Examples
+
+R-type ADD
+
+Example:
+
+ADD x3, x1, x2
+
+Possible execution:
+
+FETCH
+
+  ↓
+
+DECODE
+
+  ↓
+
+EXECUTE
+
+  ↓
+
+WRITEBACK
+
+
+During EXECUTE:
+
+ALUOut = A + B
+
+During WRITEBACK:
+
+x3 = ALUOut
+
+
+# Load
+
+Example:
+
+LW x1, 0(x2)
+
+Possible execution:
+
+FETCH
+
+  ↓
+
+DECODE
+
+  ↓
+
+EXECUTE
+
+  ↓
+
+MEMORY_READ
+
+  ↓
+
+WRITEBACK
+
+
+During EXECUTE:
+
+ALUOut = A + immediate
+
+During MEMORY_READ:
+
+MDR = Memory[ALUOut]
+
+During WRITEBACK:
+
+x1 = MDR
+
+
+# Store
+
+Example:
+
+SW x1, 0(x2)
+
+Possible execution:
+
+FETCH
+
+  ↓
+
+DECODE
+
+  ↓
+
+EXECUTE
+
+  ↓
+
+MEMORY_WRITE
+
+During EXECUTE:
+
+ALUOut = A + immediate
+
+During MEMORY_WRITE:
+
+Memory[ALUOut] = B
+
+
+# Branch
+
+Example:
+
+BEQ x1, x2, label
+
+Possible execution:
+
+FETCH
+
+  ↓
+
+DECODE
+
+  ↓
+
+EXECUTE_BRANCH
+
+
+The ALU can compare the operands and calculate the branch target.
+
+For example:
+
+if A == B:
+    PC = branch_target
+
+
+# Jump
+
+Example:
+
+JAL x1, label
+
+The CPU must:
+
+- Calculate the jump target
+- Save the return address
+- Update the PC
+
+These operations can be distributed across multiple states if necesary.
+
+
+# M Extension
+
+The M extension must continue to function correctly in the multi-cycle architecture.
+
+This includes:
+
+- MUL
+- MULH
+- MULHSU
+- MULHU
+- DIV
+- DIVU
+- REM
+- REMU
+
+The implementation may use one or multiple cycles depending on the existing hardware.
+
+A multi-cycle design provides the possibility of implementing expensive operations over several cycles instead of requiring the entire operation to complete combinationally in one cycle.
+
+For example:
+
+MUL
+
+EXECUTE_M
+
+    ↓
+
+MUL calculation
+
+    ↓
+
+WRITEBACK_M
+
+A future implementation could also use a dedicated multi-cycle multiplier or divider.
+
+The current goal is correctness rather than maximum optimization.
+
+
+# A Extension
+
+The A extension also needs to work correctly across multiple cycles.
+
+This includes:
+
+- LR.W
+- SC.W
+- AMOSWAP.W
+- AMOADD.W
+- AMOXOR.W
+- AMOAND.W
+- AMOOR.W
+- AMOMIN.W
+- AMOMAX.W
+- AMOMINU.W
+- AMOMAXU.W
+
+Atomic operations may require multiple steps such as:
+
+
+Read memory
+
+    ↓
+
+Perform operation
+
+    ↓
+
+Write memory
+
+    ↓
+
+Write result to register
+
+
+The reservation state used by LR/SC must remain valid across cycles.
+
+The existing XLEN parameterization must also be preserved for:
+
+- Reservation address
+- Memory addresses
+- Atomic data
+- ALU operations
+- Write-back
+
+
+# Control Signals
+
+The control FSM will generate signal that determine what happens during each cycle.
+
+Possible control signals include:
+
+- pc_write
+- ir_write
+
+- reg_write
+
+- alu_src_a
+- alu_src_b
+- alu_control
+
+- mem_read
+- mem_write
+
+- mem_to_reg
+
+- a_write
+- b_write
+
+- aluout_write
+- mdr_write
+
+The exact signal names are implementation-dependent.
+
+The important requirement is that the control logic clearly determines which hardware is active in each state.
+
+
+# Memory Interface
+
+The multi-cycle CPU should use the existing memory architecture where possible.
+
+The CPU may generate:
+
+- address
+- write_data
+- read_data
+- read_enable
+- write_enable
+
+For a load:
+
+ALUOut → address
+
+Memory → MDR
+
+For a store:
+
+ALUOut → address
+
+B → write_data
+
+The existing memory modules should be reused rather than unnecessarily rewritten.
+
+
+# PC Behaviour
+
+The PC is updated in different situations depending on the instruction.
+
+Normal instruction flow:
+
+PC = PC + 4
+
+Branch:
+
+PC = branch_target
+
+Jump:
+
+PC = jump_target
+
+The PC must remain parameterized:
+
+logic [XLEN-1:0] pc;
+
+
+# Microarchitecture vs ISA
+
+This project changes the microarchitecture, not the instruction set.
+
+The instructions remain:
+
+- RV32I
+- RV32M
+- RV32A
+
+A program should therefore not need to know whether it is running on:
+
+Single-cycle RV32IMA
+
+or:
+
+Multi-cycle RV32IMA
+
+The architectural results should be identical.
+
+The difference is how many clock cycles are required intenrally.
+
+
+# Simulation
+
+# Problems
+
+# Reflection
+
+# Future Pipeline
+
+# What’s Next
+
+# References
+
+- RISC-V International - RISC-V Specifications: https://riscv.org/technical/specifications/https://riscv.org/technical/specifications/
+
+- RISC-V Unprivileged ISA Specification: https://docs.riscv.org/reference/isa/unpriv/https://docs.riscv.org/reference/isa/unpriv/
+
+- RISC-V International - ISA Specifications: https://riscv.org/specifications/https://riscv.org/specifications/
+
+- Bitspinner: https://www.bit-spinner.com/rv32i-multi-cycle/rv32i-multi-cycle-introduction
+
+- Project F - RISC-V Tutorials: https://projectf.io/posts/risc-v/https://projectf.io/posts/risc-v/
+
+- Nandland - Verilog Tutorials: https://nandland.com/https://nandland.com/
