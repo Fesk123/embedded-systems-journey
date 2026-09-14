@@ -762,13 +762,57 @@ The difference is how many clock cycles are required intenrally.
 
 # Simulation
 
+Link I: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/MC%20RV32IMA%20I%20simulation.png
+Link M: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/MC%20RV32IMA%20M%20simulation.png
+Link A: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/MC%20RV32IMA%20A%20simulation.png
+
 # Problems
+
+No major problems occured during this project.
 
 # Reflection
 
+The multi-cycle architecture is the first major change to the CPU's microarchitecture.
+
+The ISA remains the same, but instructions are now divided into several clocked stages. This allows hardware such as the ALU to be reused for different purposes instead of requiring all operations to happen within one cycle.
+
+This also introduces a much more explicit control structure through the FSM.
+
+The project is an important step toward pipelining because the CPU's operations are now conceptually separated into stages. But it is important to remember that a multi-cycle CPU and a pipelined CPU are not the same thing.
+
+In the multi-cycle implementation, one instruction generally occupies the CPU for several cycles.
+
+In a pipeline, multiple instructions can occupy different stages simultaneously.
+
 # Future Pipeline
 
+The next microarchitectural step will be a 5-stage pipeline:
+
+IF → ID → EX → MEM → WB
+
+The multi-cycle implementation provides useful experience with separating these operations, but the pipeline will require a different control structure.
+
+The pipeline will also introduce new problems such as:
+
+- Data hazards
+- Control hazards
+- Forwarding
+- Stalls
+- Pipeline flushing
+
+These will be handled in the following project.
+
 # What’s Next
+
+After the multi-cycle RV32IMA CPU has been implemented and verified, the next project will focus on increasing instruction throughput by introducing a 5-stage pipeline.
+
+The planned pipeline will be:
+
+IF → ID → EX → MEM → WB
+
+Pipeline registers will be added between the stages, allowing multiple instructions to be processed simultaneously.
+
+This will introduce new challenges such as data hazards, forwarding, stalls and branch handling, which will be addressed in the following stages of the project.
 
 # References
 
