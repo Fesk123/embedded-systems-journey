@@ -1,1 +1,1232 @@
+# RV32IMA Microarchitecture – 5-Stage Pipeline & Hazard Handling
+
+## Goal
+
+The goal of this project was to improve the multi-cycle RV32IMA CPU by implementing a classical 5-stage instruction pipeline with hardware mechanisms for handling hazards.
+
+The pipeline is designed to improve instruction throughput while maintaining correct program execution.
+
+The implemented pipeline contains:
+
+- Instruction Fetch (IF)
+- Instruction Decode / Register Read (ID)
+- Execute (EX)
+- Memory Access (MEM)
+- Write Back (WB)
+- Hazard Detection
+- Data Forwarding
+- Pipeline Stalls
+- Branch Handling
+- Pipeline Flushes
+
+The ISA remains RV32IMA. No new instructions are introduced by the pipeline itself.
+
+The main objective was to make multiple instructions execute concurrently while ensuring that dependencies and control-flow changes do not produce incorrect results.
+
+---
+
+## Why Pipeline the CPU?
+
+A multi-cycle CPU executes one instruction through several clock cycles, but only one instruction is actively progressing through the datapath at a time.
+
+A pipeline allows different instructions to occupy different stages simultaneously.
+
+For example:
+
+
+Cycle:    1      2      3      4       5      6     7    8
+-------------------------------------------------------------
+Instr 1:  IF │  ID  │  EX  │   MEM  │  WB  │     │     │    │
+Instr 2:     │  IF  │  ID  │   EX   │  MEM │ WB  │     │    │
+Instr 3:     │      │  IF  │   ID   │  EX  │ MEM │  WB │    │
+Instr 4:     │      │      │   IF   │  ID  │ EX  │ MEM │ WB │
+
+
+After the pipeline is filled, the CPU can potentially complete approximately one instruction per cycle.
+
+This does not reduce the number of stages required for an individual instruction, but it increases instruction throughput.
+
+---
+
+# 1. Pipeline Architecture
+
+The CPU uses the classical five-stage RISC pipeline:
+
+
+        ┌────┐
+        │ IF │
+        └─┬──┘
+          │
+       IF/ID
+          │
+        ┌────┐
+        │ ID │
+        └─┬──┘
+          │
+       ID/EX
+          │
+        ┌────┐
+        │ EX │
+        └─┬──┘
+          │
+      EX/MEM
+          │
+        ┌─────┐
+        │ MEM │
+        └──┬──┘
+           │
+       MEM/WB
+           │
+        ┌────┐
+        │ WB │
+        └────┘
+
+
+The five stages are:
+
+| Stage | Name               | Main Function                                         |
+| ----- | ------------------ | ----------------------------------------------------- |
+| IF    | Instruction Fetch  | Fetch instruction and update PC                       |
+| ID    | Instruction Decode | Decode instruction and read registers                 |
+| EX    | Execute            | ALU operation, address calculation, branch evaluation |
+| MEM   | Memory Access      | Read/write data memory                                |
+| WB    | Write Back         | Write result back to register file                    |
+
+Pipeline registers separate each stage.
+
+---
+
+# 2. Pipeline Registers
+
+Four main pipeline registers are used:
+
+
+IF → IF/ID → ID → ID/EX → EX → EX/MEM → MEM → MEM/WB → WB
+
+
+## IF/ID
+
+Stores information fetched from instruction memory.
+
+Typical contents include:
+
+- Instruction
+- PC
+- PC + 4
+
+Example:
+
+IF/ID.pc
+IF/ID.instruction
+IF/ID.pc_plus_4
+
+---
+
+## ID/EX
+
+Stores decoded instruction information and operands required by the execute stage.
+
+Typical contents include:
+
+- PC
+- Register operands
+- Immediate value
+- Register addresses
+- Control signals
+- ALU control
+- Memory control
+- Register write control
+- Branch information
+
+Example:
+
+ID/EX.pc
+ID/EX.rs1_data
+ID/EX.rs2_data
+ID/EX.imm
+ID/EX.rs1
+ID/EX.rs2
+ID/EX.rd
+ID/EX.alu_control
+ID/EX.reg_write
+ID/EX.mem_read
+ID/EX.mem_write
+ID/EX.branch
+
+---
+
+## EX/MEM
+
+Stores results from the execute stage for use by the memory stage.
+
+Typical contents include:
+
+- ALU result
+- Store data
+- Destination register
+- Memory control signals
+- Register write control
+- Branch information
+
+Example:
+
+EX/MEM.alu_result
+EX/MEM.store_data
+EX/MEM.rd
+EX/MEM.reg_write
+EX/MEM.mem_read
+EX/MEM.mem_write
+
+---
+
+## MEM/WB
+
+Stores the final result required by the write-back stage.
+
+Typical contents include:
+
+- Memory data
+- ALU result
+- Destination register
+- Register write control
+- Memory-to-register selection
+
+Example:
+
+MEM/WB.mem_data
+MEM/WB.alu_result
+MEM/WB.rd
+MEM/WB.reg_write
+MEM/WB.mem_to_reg
+
+---
+
+# 3. Instruction Fetch (IF)
+
+The IF stage is responsible for fetching the next instruction.
+
+The main operations are:
+
+1. Use the program counter as the instruction address.
+2. Read the instruction from instruction memory.
+3. Calculate "PC + 4".
+4. Store the instruction and PC information in the IF/ID pipeline register.
+
+Normally:
+PC_next = PC + 4
+
+However, branches and jumps can change the next PC.
+
+Therefore the fetch stage must also support a redirected PC:
+
+PC_next =
+    branch_target   if branch taken
+    jump_target     if jump
+    PC + 4          otherwise
+
+---
+
+# 4. Instruction Decode (ID)
+
+The ID stage decodes the instruction and prepares the data required by later stages.
+
+Main operations:
+
+- Instruction decoding
+- Register file reads
+- Immediate generation
+- Control signal generation
+- Register dependency identification
+- Hazard detection
+
+For example, an instruction such as:
+
+asm
+add x5, x1, x2
+
+requires:
+
+rs1 = x1
+rs2 = x2
+rd  = x5
+
+The register file provides the source operands, while the control logic determines what operation the EX stage must perform.
+
+---
+
+# 5. Execute (EX)
+
+The EX stage performs the main computation.
+
+Depending on the instruction, this can include:
+
+- Integer ALU operations
+- Address calculation
+- Comparisons
+- Branch condition evaluation
+- Branch target calculation
+- M-extension operations
+- Other instruction-specific calculations
+
+Examples:
+
+ADD:
+    result = rs1 + rs2
+
+SUB:
+    result = rs1 - rs2
+
+LW:
+    address = rs1 + immediate
+
+SW:
+    address = rs1 + immediate
+
+BEQ:
+    compare rs1 and rs2
+
+
+The ALU is reused for many different operations.
+
+---
+
+# 6. Memory Access (MEM)
+
+The MEM stage interacts with data memory.
+
+For a load:
+
+asm
+lw x5, 0(x1)
+
+
+the calculated address is used to read memory.
+
+For a store:
+
+asm
+sw x5, 0(x1)
+
+
+the calculated address and store data are sent to memory.
+
+Instructions that do not access memory simply pass their result through this stage.
+
+---
+
+# 7. Write Back (WB)
+
+The WB stage writes the final result into the register file.
+
+The source of the value depends on the instruction.
+
+For example:
+
+
+ADD → ALU result
+LW  → Memory data
+
+
+A typical write-back selection is:
+
+
+if mem_to_reg:
+    write_data = memory_data
+else:
+    write_data = alu_result
+
+
+The result is written to:
+
+
+rd
+
+
+unless the destination register is "x0".
+
+As required by RISC-V:
+
+
+x0 = 0
+
+
+and writes to "x0" must have no effect.
+
+---
+
+# 8. Data Hazards
+
+Pipelining introduces dependencies between instructions.
+
+Example:
+
+asm
+add x5, x1, x2
+sub x6, x5, x3
+
+
+The second instruction needs "x5", but the first instruction has not reached the WB stage yet.
+
+Without additional hardware, the second instruction could read an old value.
+
+This is a data hazard.
+
+The pipeline therefore implements hardware to detect and resolve these dependencies.
+
+---
+
+# 9. Hazard Detection
+
+The hazard detection logic examines instructions in different pipeline stages and determines whether the current instruction can safely proceed.
+
+The main information used includes:
+
+- Source registers ("rs1", "rs2")
+- Destination register ("rd")
+- Register write enables
+- Memory operation type
+- Pipeline stage information
+
+The basic principle is:
+
+Does the instruction currently being decoded depend on a value that has not yet been written back?"
+
+If the answer is yes, the pipeline must either:
+
+- forward the value
+or
+- stall the pipeline.
+
+---
+
+# 10. Data Forwarding
+
+Most data hazards can be resolved without stopping the pipeline.
+
+Instead of waiting for a result to reach the register file, the result can be forwarded directly from a later pipeline stage to the EX stage.
+
+Example:
+
+asm
+add x5, x1, x2
+sub x6, x5, x3
+
+
+Without forwarding:
+
+
+ADD result → WB → Register File → SUB
+
+
+With forwarding:
+
+
+ADD result ───────────────┐
+                          ↓
+                        SUB EX
+
+
+The value can therefore be used before it reaches normal write-back.
+
+---
+
+# 11. Forwarding Sources
+
+The forwarding logic checks results from later pipeline stages.
+
+Typical forwarding paths are:
+
+
+EX/MEM → EX
+MEM/WB → EX
+
+
+Conceptually:
+
+
+                 ┌─────────────┐
+                 │   EX/MEM    │
+                 │ ALU result  │
+                 └──────┬──────┘
+                        │
+                        ▼
+                   ┌─────────┐
+                   │ Forward │
+                   │   MUX   │
+                   └────┬────┘
+                        │
+                        ▼
+                      ALU
+                        ▲
+                        │
+                   ┌────┴────┐
+                   │ MEM/WB  │
+                   │ result  │
+                   └─────────┘
+
+
+The ALU input therefore does not necessarily come directly from the ID/EX register.
+
+It can instead come from a newer result in a later pipeline stage.
+
+---
+
+# 12. Forwarding Selection
+
+The forwarding unit determines which value should be supplied to the ALU.
+
+Conceptually:
+
+
+00 → ID/EX register value
+01 → MEM/WB result
+10 → EX/MEM result
+
+
+The exact encoding depends on the implementation.
+
+The important part is that the newest valid value has priority.
+
+For example:
+
+
+if EX/MEM.rd == ID/EX.rs1:
+    use EX/MEM result
+else if MEM/WB.rd == ID/EX.rs1:
+    use MEM/WB result
+else:
+    use ID/EX.rs1 value
+
+
+The same logic is applied to "rs2".
+
+---
+
+# 13. Load-Use Hazard
+
+Forwarding cannot always solve every dependency.
+
+Example:
+
+asm
+lw  x5, 0(x1)
+add x6, x5, x2
+
+
+The load result is only available after the memory stage.
+
+The following instruction needs the value during its EX stage before the load has produced it.
+
+Therefore the pipeline must insert a stall.
+
+Conceptually:
+
+
+Cycle:     1    2       3     4    5     6     7
+---------------------------------------------------
+LW:       IF │  ID  │  EX  │ MEM │ WB │      │    │
+ADD:         │  IF  │  ID  │ ST  │ EX │  MEM │ WB │
+
+
+The stall introduces a bubble between the instructions.
+
+This allows the load to progress far enough for the value to become available.
+
+---
+
+# 14. Pipeline Stalls
+
+When a hazard cannot be resolved using forwarding, the pipeline is temporarily stopped.
+
+A typical stall involves:
+
+
+PC          → hold
+IF/ID       → hold
+ID/EX       → insert bubble
+
+
+This prevents the dependent instruction from progressing while allowing the older instruction to continue.
+
+The goal is to stall only the necessary part of the pipeline rather than stopping the entire CPU unnecessarily.
+
+---
+
+# 15. Pipeline Bubbles
+
+A bubble represents an empty pipeline stage.
+
+For example:
+
+
+Instruction
+Instruction
+BUBBLE
+Instruction
+
+
+The bubble does not perform an architectural operation.
+
+Instead, its control signals are cleared so that it cannot accidentally:
+
+- write a register
+- write memory
+- trigger a branch
+- modify architectural state
+
+This makes the bubble effectively behave like a "NOP".
+
+---
+
+# 16. Control Hazards
+
+Branches introduce another type of hazard.
+
+Example:
+
+asm
+beq x1, x2, target
+
+
+The CPU may already have fetched subsequent instructions before determining whether the branch is taken.
+
+For example:
+
+
+BEQ
+ADD
+SUB
+. . .
+
+
+If the branch is taken, the already-fetched instructions may belong to the wrong execution path.
+
+These instructions must therefore be removed from the pipeline.
+
+---
+
+# 17. Branch Handling
+
+The branch logic determines:
+
+1. Whether the branch condition is satisfied.
+2. The target address.
+3. Whether the PC must be redirected.
+
+For example:
+
+
+if branch_condition:
+    PC_next = branch_target
+else:
+    PC_next = PC + 4
+
+
+The exact branch comparison depends on the instruction:
+
+
+BEQ
+BNE
+BLT
+BGE
+BLTU
+BGEU
+
+
+The pipeline therefore needs both branch comparison logic and target-address calculation.
+
+---
+
+# 18. Pipeline Flush
+
+When a branch or jump changes the control flow, instructions that were fetched from the wrong path must be flushed.
+
+Conceptually:
+
+
+Before branch resolution:
+
+IF      → wrong instruction
+ID      → wrong instruction
+EX      → branch
+
+After branch is taken:
+
+IF      → target instruction
+ID      → bubble
+EX      → bubble
+
+
+The incorrect instructions are replaced with bubbles.
+
+This prevents instructions from the wrong execution path from modifying architectural state.
+
+---
+
+# 19. Branch Flush Mechanism
+
+The flush logic clears the relevant pipeline registers when a control-flow change occurs.
+
+For example:
+
+
+if branch_taken:
+    flush IF/ID
+    flush ID/EX
+    PC = branch_target
+
+
+The exact number of flushed stages depends on where branch resolution occurs in the implementation.
+
+The important requirement is:
+
+- No instrutcion from the wrong control flow path may commit an architectural result.
+
+---
+
+# 20. Interaction Between Hazards
+
+The pipeline now has multiple control mechanisms operating together:
+
+
+                ┌──────────────────┐
+                │ Hazard Detection │
+                └────────┬─────────┘
+                         │
+                 ┌───────┴───────┐
+                 │               │
+                 ▼               ▼
+              Forward          Stall
+                 │               │
+                 └───────┬───────┘
+                         │
+                         ▼
+                    Pipeline
+                     Control
+
+Branch Logic ───────────────► Flush
+
+
+The control logic must correctly prioritize situations where multiple conditions occur simultaneously.
+
+For example, a branch redirect should not allow an instruction that should have been flushed to remain active because of a previous forwarding or stall decision.
+
+---
+
+# 21. M Extension in the Pipeline
+
+The RV32M extension introduces multiplication and division instructions.
+
+Examples include:
+
+
+MUL
+MULH
+MULHSU
+MULHU
+DIV
+DIVU
+REM
+REMU
+
+
+These instructions use the existing pipeline structure while requiring additional arithmetic hardware or multi-cycle operations depending on the implementation.
+
+The pipeline therefore has to account for the timing of M-extension operations.
+
+The important architectural requirement is that the final result reaches the correct destination register and that dependent instructions receive the correct value through either:
+
+- forwarding 
+or
+- a stall when forwarding is insufficient.
+
+---
+
+# 22. A Extension in the Pipeline
+
+The RV32A extension introduces atomic memory operations.
+
+Examples include:
+
+
+LR.W
+SC.W
+AMOSWAP.W
+AMOADD.W
+AMOXOR.W
+AMOAND.W
+AMOOR.W
+AMOMIN.W
+AMOMAX.W
+AMOMINU.W
+AMOMAXU.W
+
+
+These instructions require careful interaction between:
+
+- register operations
+- memory access
+- reservation state
+- write-back
+- pipeline control
+
+The pipeline must ensure that atomic operations maintain their required ordering and do not incorrectly execute multiple memory operations because of pipeline hazards or control-flow changes.
+
+---
+
+# 23. Pipeline Control
+
+The pipeline control system manages the movement of instructions through the stages.
+
+Important control signals include:
+
+
+RegWrite
+MemRead
+MemWrite
+MemToReg
+ALUSrc
+ALUControl
+Branch
+Jump
+
+
+These control signals are generated during instruction decoding and stored in the pipeline registers.
+
+For example:
+
+
+ID
+ │
+ ├── ALUControl
+ ├── RegWrite
+ ├── MemRead
+ ├── MemWrite
+ ├── MemToReg
+ └── Branch
+        │
+        ▼
+     ID/EX
+        │
+        ▼
+       EX
+
+
+This ensures that the correct control signals remain associated with the instruction as it moves through the pipeline.
+
+---
+
+# 24. Pipeline Flush vs Stall
+
+Stalls and flushes solve different problems.
+
+### Stall
+
+A stall is used when an instruction must wait for a value.
+
+Example:
+
+
+LW
+ADD dependent on LW
+
+
+The pipeline is temporarily held and a bubble is inserted.
+
+### Flush
+
+A flush is used when instructions already in the pipeline are no longer valid.
+
+Example:
+
+
+BEQ taken
+ADD ← wrong path
+SUB ← wrong path
+
+
+The wrong-path instructions are removed.
+
+---
+
+# 25. Example: Data Forwarding
+
+Consider:
+
+asm
+add x5, x1, x2
+sub x6, x5, x3
+and x7, x6, x4
+
+
+The dependencies are:
+
+
+ADD → SUB
+SUB → AND
+
+
+The pipeline can resolve these using forwarding.
+
+Conceptually:
+
+
+ADD result ───────► SUB EX
+
+SUB result ───────► AND EX
+
+
+No unnecessary stalls are required.
+
+This allows dependent arithmetic instructions to execute with high throughput.
+
+---
+
+# 26. Example: Load-Use Hazard
+
+Consider:
+
+asm
+lw  x5, 0(x1)
+add x6, x5, x2
+
+
+The load result is not available early enough for the immediately following instruction.
+
+Therefore:
+
+
+Cycle          1     2      3      4      5       6
+-------------------------------------------------------
+LW         │  IF  │  ID  │  EX  │  MEM │  WB  │       │
+ADD        │      │  IF  │  ID  │  ST  │  EX  │  MEM  │
+
+
+The stall gives the load enough time to produce its result.
+
+After the stall, forwarding can provide the value to the dependent instruction if necessary.
+
+---
+
+# 27. Example: Taken Branch
+
+Consider:
+
+asm
+beq x1, x2, target
+add x3, x4, x5
+sub x6, x7, x8
+
+target:
+    and x9, x10, x11
+
+
+If the branch is taken, the "ADD" and "SUB" instructions may already be inside the pipeline.
+
+They must be flushed.
+
+The pipeline then continues from:
+
+
+target
+
+
+instead of executing the wrong-path instructions.
+
+---
+
+# 28. Hazard Priority
+
+The pipeline control must handle several events simultaneously.
+
+A typical conceptual priority is:
+
+
+1. Reset
+2. Pipeline flush / control-flow redirect
+3. Stall
+4. Normal pipeline operation
+
+
+The exact implementation can differ.
+
+The important property is that control-flow changes and hazards must not allow invalid instructions to modify architectural state.
+
+---
+
+# 29. Comparison With Previous CPU
+
+The pipeline does not change the ISA.
+
+The following should remain unchanged:
+
+
+Instruction encoding
+Register architecture
+Memory semantics
+RV32I behavior
+RV32M behavior
+RV32A behavior
+
+
+What changes is the internal microarchitecture.
+
+Before:
+
+
+Instruction
+    ↓
+Multi-cycle execution
+    ↓
+Result
+
+
+After:
+
+
+IF → ID → EX → MEM → WB
+
+
+with multiple instructions occupying the pipeline simultaneously.
+
+---
+
+# 30. Performance Considerations
+
+The main purpose of the pipeline is improved instruction throughput.
+
+For a sufficiently long sequence of instructions, the ideal pipeline approaches:
+
+
+CPI ≈ 1
+
+
+where:
+
+
+CPI = Cycles Per Instruction
+
+
+However, the real CPI is affected by:
+
+- Load-use stalls
+- Branch flushes
+- Other dependencies
+- M-extension timing
+- A-extension timing
+- Memory latency
+- Pipeline startup and drain
+
+Therefore:
+
+
+CPI > 1
+
+
+is expected in realistic programs.
+
+The performance of the pipelined CPU should be compared against the previous multi-cycle implementation using the same instruction sequences.
+
+---
+
+# 31. Simulation
+
+
+---
+
+# 32. Parameterization
+
+The CPU was previously parameterized using:
+
+verilog
+parameter XLEN = 32;
+
+
+The pipeline therefore continues to use the parameterized datapath where possible.
+
+The current configuration remains:
+
+
+XLEN = 32
+Instruction width = 32 bits
+ISA = RV32IMA
+
+
+The instruction width is intentionally kept at 32 bits even though the datapath is parameterized.
+
+This keeps the current implementation compatible with RV32IMA while preparing the architecture for possible future expansion.
+
+---
+
+# 33. Future RV64GC Possibility
+
+Parameterization and the separation between ISA and microarchitecture provide a foundation for potentially developing the CPU further toward RV64GC in the future.
+
+However, this project does not implement RV64GC.
+
+A future RV64 implementation would require substantially more work, including:
+
+- 64-bit datapaths
+- RV64I instructions
+- 64-bit arithmetic
+- 64-bit load/store behavior
+- Updated immediate handling
+- Updated multiplication/division behavior
+- Updated atomic operations
+- Additional RV64 instructions
+- Compressed instruction support for "C"
+- Instruction fetch changes for 16-bit compressed instructions
+- Expanded verification
+
+Therefore, the current goal remains a correct and efficient RV32IMA pipeline.
+
+---
+
+# 34. Problems Encountered
+
+---
+
+# 35. Reflection
+
+---
+
+# 36. Current Architecture
+
+The CPU now consists conceptually of:
+
+
+                     ┌─────────────────────┐
+                     │   Hazard Detection  │
+                     └──────────┬──────────┘
+                                │
+                                ▼
+                        Instruction Memory
+                                │
+                                ▼
+                                IF
+                                │
+                              IF/ID
+                                │
+                                ▼
+                               ID ◄────────────── Register File
+                                │
+                              ID/EX
+                                │
+                                ▼
+                              EX ◄────── Forwarding Unit
+                                │
+                             EX/MEM
+                                │
+                                ▼
+                               MEM ◄──────────── Data Memory
+                                │
+                              MEM/WB
+                                │
+                                ▼
+                                WB
+                                │
+                                ▼
+                           Register File
+
+
+Branch control operates alongside the pipeline and can redirect the PC and flush incorrect instructions.
+
+The main execution flow is:
+
+
+IF
+ ↓
+ID
+ ↓
+EX
+ ↓
+MEM
+ ↓
+WB
+
+
+while hazard handling operates around the pipeline:
+
+
+        ┌───────────────┐
+        │ Hazard Detect │
+        └───────┬───────┘
+                │
+       ┌────────┴────────┐
+       ▼                 ▼
+   Forwarding          Stall
+       │
+       ▼
+  Branch Logic
+       │
+       ▼
+     Flush
+
+---
+
+# 37. What's Next?
+
+The next step is to implement Control and Status Registers (CSRs) and begin supporting the RISC-V Privileged Architecture.
+
+The current RV32IMA pipeline implements the base instruction execution environment, but operating systems such as Linux require additional processor functionality for:
+
+- Exceptions
+- Interrupts
+- Privilege levels
+- Trap handling
+- System control
+- Operating-system interaction
+
+The next project will therefore introduce the CSR system and the first parts of the RISC-V Privileged Architecture.
+
+The main goals are:
+
+- Implement CSR instructions:
+  - "CSRRW"
+  - "CSRRS"
+  - "CSRRC"
+  - "CSRRWI"
+  - "CSRRSI"
+  - "CSRRCI"
+- Implement a CSR register file
+- Implement CSR address decoding
+- Implement CSR read/write permissions
+- Add the "M" (Machine) privilege mode
+- Implement important machine-level CSRs
+- Implement exception and trap handling
+- Implement "mstatus"
+- Implement "mtvec"
+- Implement "mepc"
+- Implement "mcause"
+- Implement "mtval"
+- Implement "mie"
+- Implement "mip"
+- Connect traps and interrupts to the pipeline
+- Handle "ECALL", "EBREAK", and illegal instructions
+- Implement "MRET"
+- Flush the pipeline correctly when entering and returning from traps
+- Verify CSR and trap behavior through simulation
+
+The goal is not to implement the complete RISC-V Privileged Architecture immediately. Instead, the implementation will start with the Machine mode functionality required to establish a proper trap and interrupt system.
+
+This will provide an important foundation for later operating-system support and the eventual Linux-compatible SoC.
+
+The planned execution environment will therefore evolve from:
+
+RV32IMA
+    ↓
+RV32IMA + 5-stage pipeline
+    ↓
+RV32IMA + CSR support
+    ↓
+Machine-mode privileged architecture
+    ↓
+Exceptions & interrupts
+    ↓
+Operating-system support
+    ↓
+Linux-compatible SoC
+
+
+A future step can expand this further with additional privilege modes and privileged features as required by the target software environment.
 
