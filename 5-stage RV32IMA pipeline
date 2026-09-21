@@ -1031,6 +1031,11 @@ The performance of the pipelined CPU should be compared against the previous mul
 
 # 31. Simulation
 
+Branch handling and pipeline flush: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/Branch%20handling%20and%20pipeline%20flush.png
+
+Data propagation: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/Data%20propagation.png
+
+Data forwarding and hazard detection: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/Data%20forwarding%20and%20hazard%20detection.png
 
 ---
 
@@ -1084,13 +1089,11 @@ Therefore, the current goal remains a correct and efficient RV32IMA pipeline.
 
 # 34. Problems Encountered
 
----
-
-# 35. Reflection
+No major problems occured during this project.
 
 ---
 
-# 36. Current Architecture
+# 35. Current Architecture
 
 The CPU now consists conceptually of:
 
@@ -1164,7 +1167,7 @@ while hazard handling operates around the pipeline:
 
 ---
 
-# 37. What's Next?
+# 36. What's Next?
 
 The next step is to implement Control and Status Registers (CSRs) and begin supporting the RISC-V Privileged Architecture.
 
@@ -1229,4 +1232,3 @@ Linux-compatible SoC
 
 
 A future step can expand this further with additional privilege modes and privileged features as required by the target software environment.
-
