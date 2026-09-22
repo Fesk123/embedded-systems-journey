@@ -653,24 +653,59 @@ This connects the previosly implemented SoC interrupt system with the processor'
 
 # 18. Problems Encountered
 
+No major problems occured during this project.
+
 ---
 
 # 19. Reflection
 
+Implementing CSR support and trap handling changes the processor from a CPU that mainly executes instructions into a processor that can also control and manage exceptional execution.
+
+The most important realization from this project is that exceptions are not simply another instruction type. They affect the entire processor:
+
+Instruction Decode
+        ↓
+Exception Detection
+        ↓
+Pipeline Control
+        ↓
+CSR State
+        ↓
+PC Redirection
+        ↓
+Trap Handler
+        ↓
+      MRET
+        ↓
+Normal Execution
+
+This also makes the connection between the CPU and the operating system much clearer. The operating system or firmware needs a controlled mechanism for the CPU to transfer execution to privileged code when something requires special handling.
+
+The project also highlights why pipeline control becomes increasingly important as the processor grows more advanced. A trap may require instructions already inside the pipeline to be discarded while simultaneously updating several pieces of architectural state.
+
+The implementation is therefore an important step toward making the RV32IMA processor suitable for more advanced software and eventually a Linux-capable system.
 
 ---
 
 # 20. Simulation
 
+CPU overview: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/CSR%2C%20Exceptions%20and%20Traps/v1.RV32IMA%20CPU%20overview.png
+
+CSR operations: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/CSR%2C%20Exceptions%20and%20Traps/v1.RV32IMA%20CSR%20operations.png
+
+Illegal instruction trap: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/CSR%2C%20Exceptions%20and%20Traps/v1.RV32IMA%20Illegal%20instruction%20trap.png
+
+Privilege protection: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/CSR%2C%20Exceptions%20and%20Traps/v1.RV32IMA%20Privilege%20protection.png
+
+Synchronous exceptions: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/CSR%2C%20Exceptions%20and%20Traps/v1.RV32IMA%20Syncrhonous%20exceptions.png
+
+Trap delegation: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/CSR%2C%20Exceptions%20and%20Traps/v1.RV32IMA%20Trap%20delegation.png
+
+Privilege modes: https://github.com/Fesk123/embedded-systems-journey/blob/05-linux-preparation/CSR%2C%20Exceptions%20and%20Traps/v1.RV32IMA%20privilege%20modes.png
 
 ---
 
-# 21. Future Improvements
-
-
----
-
-# 22. Relation to Future RV64GC Support
+# 21. Relation to Future RV64GC Support
 
 The processor is already parameterized using "XLEN".
 
@@ -692,7 +727,7 @@ The purpose here is to create a clean privileged-architecture foundation that ca
 
 ---
 
-# 23. What's Next
+# 22. What's Next
 
 After CSR, Privileged Architecture, Exceptions and Traps are working, the next step is to verify the complete processor under realistic software workloads.
 
