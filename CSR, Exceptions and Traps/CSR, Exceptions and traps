@@ -1,0 +1,711 @@
+# RISC-V Privileged Architecture – CSR, Exceptions and Traps
+
+## Goal
+
+The goal of this project is to extend the existing RV32IMA processor with the basic mechanisms required by the RISC-V Privileged Architecture.
+
+The focus is on:
+
+- Control and Status Registers (CSRs)
+- Privileged processor state
+- Exceptions
+- Traps
+- Trap entry and return
+- Basic supervisor/machine-mode concepts
+- Connecting the exception and trap system to the existing pipeline
+
+The project aims to implement the subset required to make the processor capable of handling synchronous exceptions and basic traps in a structured way.
+
+The existing RV32IMA instruction set remains unchanged.
+
+---
+
+## Why This Is Needed
+
+The previous processor implementation mainly focused on executing normal instructions.
+
+For a real operating-system-capable processor, this is not enough.
+
+The processor must also be able to react to events such as:
+
+- Illegal instructions
+- Misaligned memory accesses
+- Instruction access faults
+- Load/store access faults
+- System calls
+- Interrupts
+
+These events cause the processor to enter a trap handler.
+
+CSRs provide the processor with the registers needed to store information about the trap and control privileged execution.
+
+This is an important step toward eventually running more advanced software and an operating system.
+
+---
+
+# 1. RISC-V Privileged Architecture
+
+RISC-V separates normal application execution from privileged execution using privilege modes.
+
+The main modes defined by RISC-V are:
+
+- User mode ("U")
+- Supervisor mode ("S")
+- Machine mode ("M")
+
+For this project, Machine mode is the primary focus.
+
+Machine mode is the highest privilege level and is present on all standard RISC-V implementations.
+
+Supervisor mode may be added later if required by the Linux target.
+
+---
+
+## Current Privilege Level
+
+The processor needs to keep track of its current privilege mode.
+
+For example:
+
+M-mode
+  |
+  | trap
+  v
+Trap Handler
+
+Initially, the processor can start in Machine mode.
+
+The privilege mode affects which operations and CSRs are accessible.
+
+---
+
+# 2. Control and Status Registers (CSRs)
+
+CSRs are special processor registers used to control and monitor the CPU.
+
+They are accessed using CSR instructions rather than normal load/store instructions.
+
+Important CSR instructions include:
+
+CSRRW
+CSRRS
+CSRRC
+CSRRWI
+CSRRSI
+CSRRCI
+
+These instructions allow software to:
+
+- Read CSRs
+- Write CSRs
+- Set bits
+- Clear bits
+
+---
+
+# 3. Important CSRs
+
+The first implementation focuses on the Machine-mode CSRs required for trap handling.
+
+### "mstatus"
+
+Contains machine-mode status information.
+
+Important fields include:
+
+ "MIE" – Machine Interrupt Enable
+ "MPIE" – Previous Machine Interrupt Enable
+ "MPP" – Previous Privilege Mode
+
+These fields are used when entering and leaving traps.
+
+---
+
+### "mtvec"
+
+Machine Trap-Vector Base Address.
+
+It specifies where trap handling begins.
+
+Example:
+
+
+mtvec = 0x00000100
+
+
+When a trap occurs:
+
+
+PC ← mtvec
+
+
+The exact trap-vector behavior depends on the configured mode.
+
+---
+
+### "mepc"
+
+Machine Exception Program Counter.
+
+This stores the address of the instruction that caused the trap, or the appropriate exception PC defined by the architecture.
+
+Example:
+
+
+mepc = PC_of_faulting_instruction
+
+
+It allows the trap handler to determine where execution came from.
+
+---
+
+### "mcause"
+
+Contains the reason for the trap.
+
+It distinguishes between Exceptions and Interrupts and contains a cause code.
+
+Conceptually:
+
+
+mcause
++----------------+----------------+
+| Interrupt flag |   Cause code   |
++----------------+----------------+
+
+
+---
+
+### "mtval"
+
+Contains additional information about certain traps.
+
+Depending on the trap type, it can contain information such as:
+
+- A faulting address
+- An instruction related to the exception
+- Zero for traps where no additional value is required
+
+---
+
+### "mie"
+
+Machine Interrupt Enable.
+
+This CSR controls which machine-level interrupts are enabled.
+
+---
+
+### "mip"
+
+Machine Interrupt Pending.
+
+This CSR represents pending machine-level interrupts.
+
+---
+
+# 4. CSR Addressing
+
+CSRs have 12-bit addresses.
+
+Example conceptual mapping:
+
+
+CSR address
+    |
+    v
++---------+
+| CSR File|
++---------+
+    |
+    +--> mstatus
+    +--> mtvec
+    +--> mepc
+    +--> mcause
+    +--> mtval
+    +--> mie
+    +--> mip
+
+
+The CSR unit should provide:
+
+
+csr_addr
+csr_write_data
+csr_read_data
+csr_write_enable
+
+
+The CPU can then access CSRs through the existing instruction pipeline.
+
+---
+
+# 5. CSR Instructions
+
+CSR instructions operate differently from normal arithmetic instructions.
+
+For example:
+
+asm
+csrrw x1, mtvec, x2
+
+
+Conceptually:
+
+x1 ← mtvec
+mtvec ← x2
+
+
+Another example:
+
+asm
+csrrs x1, mstatus, x2
+
+
+Conceptually:
+
+x1 ← mstatus
+mstatus ← mstatus OR x2
+
+
+The CSR unit therefore needs to support:
+
+- Read
+- Write
+- Set
+- Clear
+- Immediate variants
+
+---
+
+# 6. Exceptions
+
+An exception is a synchronous event caused by the currently executing instruction.
+
+Examples include:
+
+- Illegal instruction
+- Instruction address misalignment
+- Instruction access fault
+- Load address misalignment
+- Load access fault
+- Store/AMO address misalignment
+- Store/AMO access fault
+- Environment call ("ECALL")
+- Breakpoint ("EBREAK")
+
+The exact set implemented initially depends on which conditions the current processor and memory system can detect.
+
+---
+
+# 7. System Instructions
+
+The processor needs to recognize privileged/system instructions.
+
+Important instructions include:
+
+- ECALL
+- EBREAK
+- MRET
+- WFI
+
+For this project, the most important instructions are:
+
+### ECALL
+
+Used by software to intentionally request an environment call.
+
+For example:
+- asm
+- ecall
+
+This causes a synchronous exception.
+
+---
+
+### EBREAK
+
+Used to generate a breakpoint exception.
+
+- asm
+- ebreak
+
+This can later be useful for debugging.
+
+---
+
+### MRET
+
+Returns from a Machine-mode trap handler.
+
+ex:
+- asm
+- mret
+
+Conceptually:
+
+PC ← mepc
+Privilege ← previous privilege
+MIE ← MPIE
+MPIE ← 1
+
+The exact state transition follows the RISC-V Privileged Architecture specification.
+
+---
+
+# 8. Trap Entry
+
+When an exception occurs, the processor must save the required state and transfer control to the trap handler.
+
+A simplified trap entry sequence is:
+
+
+Exception detected
+       |
+       v
+Save PC → mepc
+       |
+       v
+Save cause → mcause
+       |
+       v
+Save additional value → mtval
+       |
+       v
+Update mstatus
+       |
+       v
+PC ← mtvec
+       |
+       v
+Execute trap handler
+
+
+The original instruction flow is interrupted.
+
+---
+
+# 9. Trap Return
+
+The trap handler eventually executes:
+
+- asm
+- mret
+
+This restores the required machine state and returns execution to the saved program counter.
+
+Conceptually:
+
+Trap Handler
+     |
+     | MRET
+     v
+Restore privilege state
+     |
+     v
+PC ← mepc
+     |
+     v
+Continue execution
+
+This mechanism is essential for operating-system and firmware-level software.
+
+---
+
+# 10. Pipeline Integration
+
+The processor already uses a 5-stage pipeline:
+
+IF → ID → EX → MEM → WB
+
+Exceptions therefore need to be handled together with pipeline control.
+
+A simplified example:
+
+
+IF      ID      EX      MEM     WB
+        ADD     ECALL
+                ^
+                |
+             Exception
+
+When an exception is detected, younger instructions already present in the pipeline must not be allowed to modify architectural state.
+
+The pipeline therefore needs a mechanism to:
+
+- Detect exceptions
+- Cancel invalid instructions
+- Prevent incorrect register writes
+- Prevent incorrect memory writes
+- Save the correct PC
+- Redirect execution to "mtvec"
+
+---
+
+# 11. Trap Flush
+
+A trap requires the pipeline to be flushed.
+
+Conceptually:
+
+Normal execution:
+
+IF → ID → EX → MEM → WB
+
+Trap detected
+      |
+      v
+Flush younger instructions
+      |
+      v
+PC ← mtvec
+      |
+      v
+Fetch trap handler
+
+This is similar to branch flushing, but trap handling also requires CSR state updates.
+
+---
+
+# 12. Exception Detection
+
+Exception detection should be connected to the appropriate pipeline stages.
+
+For example:
+
+| Exception                | Detection stage |
+| ------------------------ | --------------- |
+| Illegal instruction      | ID              |
+| ECALL                    | ID              |
+| EBREAK                   | ID              |
+| Instruction misalignment | IF              |
+| Instruction access fault | IF              |
+| Load misalignment        | MEM             |
+| Load access fault        | MEM             |
+| Store misalignment       | MEM             |
+| Store access fault       | MEM             |
+
+The exact implementation depends on the existing memory and instruction-fetch architecture.
+
+---
+
+# 13. Trap Priority
+
+Multiple events can potentially occur during the same cycle.
+
+The processor therefore needs a defined priority system.
+
+For example:
+
+
+Highest priority
+       |
+       v
+Instruction fetch exceptions
+       |
+       v
+Instruction decode exceptions
+       |
+       v
+Memory exceptions
+       |
+       v
+Interrupts
+       |
+       v
+Normal execution
+
+
+The exact priority must follow the RISC-V architecture where applicable rather than being arbitrarily chosen.
+
+---
+
+# 14. CSR Unit Architecture
+
+A possible implementation is:
+
+
+             +----------------+
+             |   CSR Unit     |
+             +----------------+
+                |    |    |
+                |    |    +--> mtval
+                |    +-------> mcause
+                +-----------> mepc
+                     |
+                     +-------> mstatus
+                     +-------> mtvec
+                     +-------> mie
+                     +-------> mip
+
+
+The CSR unit receives:
+
+- csr_addr
+- csr_write_data
+- csr_write_enable
+- csr_operation
+
+and produces:
+
+- csr_read_data
+
+Trap logic can also directly update the required CSRs.
+---
+
+# 15. Trap Controller
+
+A dedicated trap controller can simplify the implementation.
+
+Example:
+
+
+             +----------------+
+             |  Trap Sources  |
+             +----------------+
+               |    |    |
+               v    v    v
+            Illegal ECALL Memory
+               \    |    /
+                \   |   /
+                 v  v  v
+              +---------+
+              |  Trap   |
+              | Control |
+              +---------+
+                   |
+          +--------+--------+
+          |        |        |
+          v        v        v
+        mepc     mcause   mtval
+                   |
+                   v
+                 mtvec
+                   |
+                   v
+                  PC
+
+
+This keeps trap handling separate from the normal ALU datapath.
+
+---
+
+# 16. Interrupts vs Exceptions
+
+The processor must distinguish between exceptions and interrupts.
+
+### Exception
+
+Synchronous with the currently executing instruction.
+
+Examples:
+
+- Illegal instruction
+- ECALL
+- Misaligned access
+
+### Interrupt
+
+Asynchronous relative to the currently executing instruction.
+
+Examples include:
+
+- Timer interrupt
+- External interrupt
+- Software interrupt
+
+This project primarily establishes the trap infrastructure so that interrupts can later use the same mechanism.
+
+---
+
+# 17. Relation to the Existing Interrupt Controller
+
+The existing SoC contains an interrupt controller.
+
+The new trap system provides the CPU-side mechanism required to handle interrupts.
+
+The architecture can eventually become:
+
+Timer
+  |
+  v
+Interrupt Controller
+  |
+  v
+CPU interrupt input
+  |
+  v
+Trap Controller
+  |
+  +--> mcause
+  +--> mepc
+  +--> mstatus
+  |
+  v
+mtvec
+  |
+  v
+Interrupt Handler
+
+This connects the previosly implemented SoC interrupt system with the processor's privileged architecture.
+
+---
+
+# 18. Problems Encountered
+
+---
+
+# 19. Reflection
+
+
+---
+
+# 20. Simulation
+
+
+---
+
+# 21. Future Improvements
+
+
+---
+
+# 22. Relation to Future RV64GC Support
+
+The processor is already parameterized using "XLEN".
+
+Current configuration:
+
+XLEN = 32
+
+The privileged architecture should therefore avoid unnecessarily hard-coding 32-bit assumptions.
+
+A future RV64GC implementation would require the CSR and privileged architecture to support:
+
+XLEN = 64
+
+This would affect CSR widths and other architectural state.
+
+However, RV64GC is not the goal of this project.
+
+The purpose here is to create a clean privileged-architecture foundation that can later be extended if RV64GC becomes part of the project.
+
+---
+
+# 23. What's Next
+
+After CSR, Privileged Architecture, Exceptions and Traps are working, the next step is to verify the complete processor under realistic software workloads.
+
+Possible next stages are:
+
+1. Full RV32IMA verification
+2. Performance testing
+3. FPGA implementation
+4. Bare-metal software
+5. SoC integration
+6. Timer and interrupt testing
+7. RISC-V toolchain
+8. Linux-compatible SoC
+9. FPGA Linux prototype
+
+The exact next step depends on which parts of the processor and SoC remain to be verified.
