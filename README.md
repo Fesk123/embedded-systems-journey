@@ -28,7 +28,7 @@ Build a custom embedded Linux platform running on FPGA hardware.
 
 04-soc-architecture: https://github.com/Fesk123/embedded-systems-journey/tree/04-soc-architecture
 
-05-linux-preperation: https://github.com/Fesk123/embedded-systems-journey/tree/05-linux-preparation
+05-risc-v: https://github.com/Fesk123/embedded-systems-journey/tree/05-risc-v
 
-06-fpga-board: https://github.com/Fesk123/embedded-systems-journey/tree/06-fpga-board
+06-rv64gc-computer: https://github.com/Fesk123/embedded-systems-journey/tree/06-rv64gc-computer
 
