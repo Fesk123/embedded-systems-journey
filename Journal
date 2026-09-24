@@ -575,3 +575,46 @@ I also gained experience with system-level simulation and debugging.
 The integration is not completely finished, but I now have a clearer understanding of what needs to be solved before the different components can reliably work together.
 
 The next step will be to continue toward the CPU and prepare the system for eventually running software and Linux.
+
+
+########## Journal – Step 5: RISC-V ##########
+
+During this step, I started implementing and understanding the RISC-V processor that will eventually become the CPU for my own computer. I began with the RV32I instruction set and then extended it with the M and A extensions, creating an RV32IMA processor.
+
+I first verified the basic RV32I instruction set and made sure the CPU could correctly execute arithmetic, logical, memory, branch, and jump instructions. After that, I added the M extension for multiplication and division and the A extension for atomic memory operations.
+
+I then focused on improving the processor architecture rather than only adding instructions. I parameterized the CPU using XLEN, allowing the datapath to be configured for different register widths while keeping the current implementation at 32 bits. This is also intended to make a future transition toward RV64GC easier.
+
+The processor was then developed from a simpler execution structure into a multi-cycle architecture and later a 5-stage pipeline. The pipeline uses the stages Instruction Fetch, Instruction Decode, Execute, Memory Access, and Write Back. Hazard detection, data forwarding, stalls, and branch handling were added to make the pipeline function correctly when instructions depend on each other.
+
+Another important part of this step was implementing the RISC-V privileged architecture. I added support for Control and Status Registers (CSRs), including registers such as mstatus, mtvec, mepc, mcause, and mtval. I also started implementing exceptions and traps, including mechanisms for entering a trap handler and returning using MRET.
+
+This part of the project showed that building a CPU is not only about making individual instructions work. Once pipelining and privileged execution are introduced, different parts of the processor become strongly connected. A single exception, branch, or data dependency can require changes to the pipeline control, program counter, register state, and memory interface.
+
+---
+
+## Problems encountered
+
+
+One of the main difficulties was integrating the different CPU features without breaking functionality that was already working. Parameterization introduced many places where fixed 32-bit assumptions had to be identified and replaced carefully.
+
+The pipeline also introduced new problems with data hazards and control flow. Instructions can depend on results that have not yet reached the write-back stage, so forwarding and stalls were required. Branches and traps also require instructions already in the pipeline to be flushed correctly.
+
+The CSR and trap implementation introduced another level of complexity. It is important to save the correct program counter in mepc, store the correct cause in mcause, update the relevant status bits, and redirect the PC to mtvec without allowing younger pipeline instructions to modify the processor state.
+
+These problems are still useful for the project because they show where the complexity of a processor actually comes from: not necessarily from individual instructions, but from making all the different systems work correctly together.
+
+---
+
+## Reflection
+
+
+This step has been one of the largest parts of the project so far because the processor has evolved from a basic instruction executor into a much more complete CPU architecture.
+
+I have gained a much better understanding of how an instruction moves through a processor, how hazards occur in a pipeline, and how the processor reacts when something goes wrong. The privileged architecture also made the connection between hardware and software much clearer, since traps and CSRs provide the mechanisms that software and operating systems can use to control the processor.
+
+The work also showed me why verification is important when developing hardware. Adding a new feature can easily introduce problems in another part of the processor, so testing individual components as well as the complete CPU is necessary.
+
+The current RV32IMA processor provides a much stronger foundation for the next part of the project, where it can be integrated into the complete SoC and eventually tested on an FPGA.
+
+---
