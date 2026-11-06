@@ -32,3 +32,4 @@ Build a custom embedded Linux platform running on FPGA hardware.
 
 06-rv64gc-computer: https://github.com/Fesk123/embedded-systems-journey/tree/06-rv64gc-computer
 
+07-kv260-rv64gc-platform: https://github.com/Fesk123/embedded-systems-journey/tree/07-kv260-rv64gc-platform
