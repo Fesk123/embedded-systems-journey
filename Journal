@@ -84,7 +84,7 @@ I learned how a clock signal can be used to synchronize changes in a digital cir
 The main concepts I worked with were:
 
 - Clock signals
-- Rising edges (`posedge`)
+- Rising edges ("posedge")
 - Reset
 - D Flip-Flops
 - Registers
@@ -501,7 +501,7 @@ During this step, I started thinking about how these components communicate and 
 
 The biggest lesson was that integration is significantly more difficult than building individual components.
 
-The fact that the UART eventually produced `XX` in the simulation showed me that there are many more possible problems once several modules interact with each other.
+The fact that the UART eventually produced "XX" in the simulation showed me that there are many more possible problems once several modules interact with each other.
 
 Even though the final integration was not completely successful, I gained a much better understanding of how debugging a larger digital system works.
 
@@ -618,3 +618,194 @@ The work also showed me why verification is important when developing hardware. 
 The current RV32IMA processor provides a much stronger foundation for the next part of the project, where it can be integrated into the complete SoC and eventually tested on an FPGA.
 
 ---
+
+
+########## Journal – Step 6: RV64GC Computer ##########
+
+## Overview
+
+During this step, I continued developing the custom RV64GC computer by implementing the hardware components required for a complete SoC.
+
+While the previous stages focused mainly on processor architecture and individual computer components, this stage expanded the system with memory management, caches, peripherals, graphics, debugging, and system control.
+
+A large number of hardware modules have now been developed in Verilog and tested independently through simulation. The project has therefore reached an important milestone: most of the major building blocks are available, and the focus can begin shifting toward integrating them into a complete computer.
+
+The main challenge ahead is making all these independently developed components work together on the KV260 FPGA.
+
+## Main Developments
+
+During this stage, I expanded the RV64GC computer with several major subsystems.
+
+Processor and memory
+- RV64GC five-stage pipelined CPU.
+- Sv39 MMU and TLBs.
+- L1 instruction and data caches.
+- L2 cache.
+- Wishbone interconnect.
+- Boot ROM and DDR interface.
+
+System functionality
+- PLIC and DMA.
+- Timer and interrupts.
+- PMP memory protection.
+- PMU performance monitoring.
+- Clock-domain crossing and reset infrastructure.
+- Watchdog timer.
+
+External interfaces
+- SPI and QSPI.
+- UART and GPIO.
+- JTAG and debugging.
+- SD card storage through the KV260 PS.
+- Ethernet through the KV260 PS.
+- USB HID and audio through the KV260 PS.
+
+Graphics
+- Custom GPU written in Verilog.
+- Framebuffer and AXI DMA.
+- 2D graphics engine.
+- Triangle rasterizer and shader.
+- Depth buffer and texture cache.
+- Display scanout.
+
+These components are intended to provide the foundation for a computer with storage, networking, USB peripherals, graphical output, and eventually Linux support.
+
+## Projects 13–16
+
+The final development group focused on improving the reliability and capabilities of the overall hardware architecture.
+
+Project 13 – Memory Subsystem
+
+This project introduced a 256 KiB L2 cache, PMA checking, cache maintenance, and a Wishbone-to-AXI4 bridge. These components extend the memory hierarchy and provide a path toward connecting the processor to the KV260 memory infrastructure.
+
+Project 14 – CPU Protection & Performance
+
+This project introduced Physical Memory Protection (PMP) and a Performance Monitoring Unit (PMU). The PMP supports TOR, NA4, and NAPOT regions, while the PMU provides counters such as "mcycle", "minstret", and additional HPM counters.
+
+Project 15 – Clock & Reset Infrastructure
+
+This project introduced an asynchronous FIFO and four CDC synchronization modules. These are important for safely transferring signals and data between subsystems operating in different clock domains.
+
+Project 16 – System Control & Watchdog
+
+This project introduced a programmable 64-bit watchdog timer with Wishbone registers, timeout detection, interrupt signalling, and a system reset request.
+
+Together, these projects provide important infrastructure for memory protection, performance analysis, reliable communication, and system recovery.
+
+## Verification Results
+
+An important improvement during this stage was the creation of a shared text-based testbench:
+
+"text_Sim_Projects_13_16.v"
+
+Instead of testing every module in a completely separate environment, this testbench covers twelve modules through eight test groups.
+
+The tests include memory permissions, cache operations, FIFO behaviour, clock-domain crossing, AXI transactions, watchdog timeouts, and error handling.
+
+### Latest Verification Results
+
+| Test Group           | Errors |
+|----------------------|--------|
+| PMA                  | 0      |
+| PMP                  | 0      |
+| PMU                  | 0      |
+| Async FIFO + CDC     | 0      |
+| Cache Maintenance    | 0      |
+| L2 Cache             | 0      |
+| Wishbone–AXI4 Bridge | 0      |
+| Watchdog             | 0      |
+
+All eight test groups now report zero errors.
+
+The PMA implementation initially had three failing tests. After investigating the problem, I corrected how region attributes were preserved during certain denied memory accesses. The corrected implementation was tested again and passed.
+
+This was a particularly useful part of the development because it showed how a failing test can reveal an actual design issue and how the verification environment can be used to confirm a correction.
+
+The GPU also had promising simulation results, with tested AXI read and write bursts completing without reported protocol or memory errors.
+
+However, these results only verify the functionality covered by the respective simulations. They do not yet establish that the complete computer works on the physical FPGA.
+
+## What Went Well
+
+One of the biggest successes was completing and testing a large number of different hardware subsystems.
+
+The project has developed from a processor-focused design into a much broader computer architecture. I now have implementations for memory management, multiple cache levels, bus communication, debugging, storage, networking, USB, graphics, and system control.
+
+Another positive result was improving the verification process. The shared testbench for Projects 13–16 made it possible to test several related modules in one environment and obtain a clearer overview of their status.
+
+Getting all eight test groups to report zero errors was an important milestone. It also demonstrated the value of testing edge cases rather than only checking normal operation.
+
+For example, the tests cover FIFO pointer wraparound, different clock speeds, AXI backpressure, dirty cache eviction, invalid responses, and reset during an active transaction.
+
+I also made progress in understanding how the different subsystems depend on one another. The memory hierarchy, DMA, cache maintenance, and external memory interfaces cannot be treated as completely independent components. Their behaviour must be coordinated to ensure that the computer produces correct results.
+
+Finally, the development has resulted in a much clearer understanding of what is required to turn the existing Verilog modules into a working FPGA-based computer.
+
+## What Went Wrong and What Could Be Improved
+
+The main limitation during this stage was the increasing complexity of the project.
+
+Although many individual modules have been developed and tested, they have not all been integrated into one complete system. This means that passing individual simulations does not guarantee that the modules will work correctly when connected together.
+
+The PMA checker also demonstrated that even relatively small implementation details can cause verification failures. Three tests initially failed because of incorrect region attribute handling. Although the problem was corrected, it highlighted the importance of carefully considering edge cases and not assuming that a module works simply because its main functionality has been implemented.
+
+Another challenge is that some interfaces depend on software running on the KV260's Processing System. This applies to storage, Ethernet, and USB. Their complete functionality cannot be established through Verilog simulation alone because the PS software, hardware bridge, and data-transfer mechanisms must also work together.
+
+The project has also reached a point where FPGA resource utilization, timing constraints, clock configuration, and actual memory bandwidth become increasingly important. These factors are difficult to evaluate fully without synthesizing and testing the design on the target hardware.
+
+In hindsight, continuing to develop more isolated components without regularly integrating them would make the final integration increasingly difficult. This is why I have decided to change the development strategy for the next stage.
+
+## What I Have Learned
+
+This stage has taught me that designing a computer involves much more than developing a processor.
+
+I have gained a better understanding of how different hardware subsystems interact and why components such as caches, DMA, memory protection, interrupts, and clock-domain crossing are necessary.
+
+One particularly important lesson was the relationship between caches and external memory. When multiple components can access the same memory, it becomes necessary to consider cache consistency and memory ownership. A DMA transfer, for example, can cause problems if the processor still holds an outdated cached copy of the data.
+
+I have also learned more about communication protocols and hardware interfaces. Wishbone and AXI4 have different transaction mechanisms, and connecting them requires careful handling of handshakes, bursts, backpressure, and error responses.
+
+The CDC project improved my understanding of asynchronous hardware. Different clock frequencies cannot simply be connected without considering metastability, synchronization, and data integrity. Gray-coded pointers, asynchronous FIFOs, and handshake mechanisms provide solutions to these problems.
+
+Another important lesson concerns verification. Testing normal operation is not enough. A reliable design must also handle unusual conditions, such as full FIFOs, invalid memory accesses, interrupted transactions, and counter overflow.
+
+Most importantly, I have learned the difference between developing a functional hardware module and building a functional computer. Individual components may pass their simulations, but system-level integration introduces additional challenges that can only be discovered when the components operate together.
+
+## Change in Development Strategy
+
+The KV260 has been ordered and will become the main FPGA development platform for the next stage.
+
+Instead of continuing to develop isolated modules, I will gradually construct the complete computer around a growing top-level design.
+
+The new development plan consists of six phases:
+
+1.FPGA Bring-up: Configure Vivado, clocks, reset, GPIO, Pmod, and ILA.
+2.Processor and Basic SoC: Integrate the RV64GC CPU, MMU, Wishbone, caches, and DDR.
+3.System Functions: Integrate timers, PLIC, DMA, SPI/QSPI, and debugging.
+4.External Interfaces: Integrate SD storage, Ethernet, and USB.
+5.Graphics: Integrate the GPU, framebuffer, and display output.
+6.Complete Computer: Build the full SoC, boot firmware, Linux support, and system verification.
+
+Each component will be reviewed, tested individually, integrated into the growing top-level design, and then verified on the KV260.
+
+## Reflection
+
+Overall, this has been a successful but challenging stage of the project.
+
+A large amount of hardware has been developed, and the latest verification results show that the tested modules are functioning as intended. I have also gained a much broader understanding of computer architecture, particularly the relationships between memory, communication, protection, and system control.
+
+At the same time, the project has become significantly more complex. The biggest remaining challenge is no longer implementing individual modules, but ensuring that they operate together correctly.
+
+I therefore believe that changing the development strategy is necessary. Building the computer incrementally on the KV260 should make it easier to identify integration problems early and provide more meaningful verification than continuing to test everything independently.
+
+This is also an important transition from mostly simulation-based development toward practical FPGA engineering.
+
+## Next Step
+
+The next stage isStep 7 – KV260 FPGA Bring-up.
+
+The first project will be "KV260_FPGA_Bringup", where I will configure Vivado and verify basic FPGA functionality using clocks, resets, counters, GPIO, Pmod, and ILA.
+
+Once the FPGA platform has been verified, I will begin integrating the RV64GC processor and gradually construct the complete SoC.
+
+The ultimate goal is to transform the previously developed components into a fully integrated and FPGA-verified RV64GC computer capable of running Linux.
